@@ -8,6 +8,8 @@ class DbHandler {
 
   private static LoggerInterface $logger;
 
+  private static CacheInterface $cache;
+
 
   /**
    * Objeto PDO
@@ -53,7 +55,10 @@ class DbHandler {
       self::$logger = new Logger();
     }
 
-    self::$logger->log();
+    if (self::$cache === NULL) {
+      self::$cache = new Cache();
+    }
+
     self::$logger::log();
     $this->setDBH($pdo);
   }
