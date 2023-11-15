@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribal2;
+namespace Tribal2\DbHandler\Enums;
 
 enum PDOCommitModeEnum {
   case ON;

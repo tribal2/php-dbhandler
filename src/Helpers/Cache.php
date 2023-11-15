@@ -1,9 +1,17 @@
 <?php
 
-namespace Tribal2;
+namespace Tribal2\DbHandler\Helpers;
 
+use Tribal2\DbHandler\Interfaces\CacheInterface;
 
-interface CacheInterface {
+class Cache implements CacheInterface {
+
+  /**
+   * Array de datos en cache
+   * @var array
+   */
+  private array $cache = [];
+
 
   /**
    * Método para obtener datos del cache temporal para evitar consultas
@@ -16,7 +24,20 @@ interface CacheInterface {
    *
    * @return mixed Datos almacenados en cache (NULL si no se encuentra nada)
    */
-  public function get(string $group, $key);
+  final public function get(string $group, $key) {
+    // Codificamos llave
+    $argKey = json_encode($key);
+
+    if (
+      isset($cache[$group])
+      && isset($this->cache[$group][$argKey])
+    ) {
+      $data = $this->cache[$group][$argKey];
+      return is_object($data) ? clone $data : $data;
+    }
+
+    return NULL;
+  }
 
 
   /**
@@ -29,8 +50,30 @@ interface CacheInterface {
    *                      dentro del grupo (normalmente argumentos del método
    *                      originado con func_get_args())
    * @param mixed  $data  Datos a incluir en el cache
+   *
+   * @throws Exception
    */
-  public function set(string $group, $key, $data): void;
+  final public function set(string $group, $key, $data): void {
+    // Creamos el grupo si no existe
+    if (!isset($this->cache[$group])) {
+      $this->cache[$group] = [];
+    }
+
+    // Codificamos key
+    $argKey = json_encode($key);
+
+    // Almacenamos datos
+    $this->cache[$group][$argKey] = is_object($data) ? clone $data : $data;
+  }
+
+
+  private function __clone() {}
+
+
+  public function __construct() {}
+
+
+  public function __wakeup() {}
 
 
 }

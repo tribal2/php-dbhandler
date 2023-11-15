@@ -1,8 +1,9 @@
 <?php
 
-namespace Tribal2;
+namespace Tribal2\DbHandler;
 
 use Exception;
+use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 
 class DbTransaction {
 

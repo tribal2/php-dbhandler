@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribal2;
+namespace Tribal2\DbHandler;
 
 use PDO, PDOStatement, Exception;
 use PdoDebugger;

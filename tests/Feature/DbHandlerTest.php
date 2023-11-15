@@ -1,8 +1,8 @@
 <?php
 
-use Tribal2\DbConfig;
-use Tribal2\DbHandler;
-use Tribal2\PDOSingleton;
+use Tribal2\DbHandler\DbConfig;
+use Tribal2\DbHandler\DbHandler;
+use Tribal2\DbHandler\PDOSingleton;
 
 beforeAll(function () {
   $dbConfig = new DbConfig(

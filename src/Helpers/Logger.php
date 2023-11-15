@@ -1,8 +1,10 @@
 <?php
 
-namespace Tribal2;
+namespace Tribal2\DbHandler\Helpers;
 
-class Logger implements LoggerInterface {
+use Tribal2\DbHandler\Interfaces\LoggerInterface as InterfacesLoggerInterface;
+
+class Logger implements InterfacesLoggerInterface {
 
 
   public static function log($data = NULL, $title = '', $level = 'debug'): void {

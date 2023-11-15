@@ -12,7 +12,10 @@
     "license": "private",
     "autoload": {
         "psr-4": {
-            "Tribal2\\DbHandler\\": "src/"
+            "Tribal2\\DbHandler\\": "src/",
+            "Tribal2\\DbHandler\\Enums\\": "src/Enums",
+            "Tribal2\\DbHandler\\Interfaces\\": "src/Interfaces",
+            "Tribal2\\DbHandler\\Helpers\\": "src/Helpers"
         }
     },
     "authors": [
