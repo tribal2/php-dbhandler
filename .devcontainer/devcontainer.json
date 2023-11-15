@@ -1,0 +1,64 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.163.1/containers/docker-existing-dockerfile
+{
+	"name": "DbHandler",
+	"dockerComposeFile": "./docker-compose.yml",
+	"service": "php",
+	"workspaceFolder": "/dbhandler",
+
+	"customizations": {
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"github.copilot",
+				"xdebug.php-debug",
+				"bmewburn.vscode-intelephense-client",
+				"ikappas.phpcs",
+				"neilbrayfield.php-docblocker",
+				"mhutchie.git-graph",
+				"eamodio.gitlens",
+				"Gruntfuggly.todo-tree",
+				"m1guelpf.better-pest"
+			],
+
+			// Set *default* container specific settings.json values on container create.
+			"settings": {
+				"files.exclude": {
+					"**/dist": true
+				},
+				"search.exclude": {
+					"**/dist": true
+				},
+				"terminal.integrated.profiles.linux": {
+					"bash": {
+						"path": "/bin/bash"
+					}
+				},
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"workbench.colorTheme": "Solarized Dark",
+				"workbench.colorCustomizations": {
+					"minimap.background": "#002b36CC"
+				},
+				"php.validate.executablePath": "/usr/local/bin/php",
+				"php.suggest.basic": false,
+				"phpcs.executablePath": "/usr/local/bin/phpcs",
+				"phpcs.standard": "/dbhandler/ref/php_coding_standard.xml",
+				"phpcs.showSources": true,
+				"php-docblocker.returnGap": true,
+				"peacock.affectStatusBar": false,
+				"peacock.affectTabActiveBorder": true,
+				"peacock.remoteColor": "#42b883",
+				"todo-tree.general.tags": [
+					"BUG",
+					"HACK",
+					"FIXME",
+					"TODO",
+					"XXX",
+					"[ ]",
+					"[x]",
+					"@todo"
+				]
+			}
+		}
+	}
+}
