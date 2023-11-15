@@ -14,7 +14,7 @@ interface LoggerInterface {
   const EMERGENCY = 'emergency';
 
 
-  public function log($data = NULL, $title = '', $level = 'debug'): void;
+  public static function log($data = NULL, $title = '', $level = 'debug'): void;
 
 
 }
