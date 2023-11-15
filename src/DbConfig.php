@@ -15,4 +15,12 @@ class DbConfig {
   ) {}
 
 
+  public function getConnString(): string {
+    return "mysql:host={$this->host}; "
+      . "port={$this->port}; "
+      . "dbname={$this->dbName}; "
+      . "charset={$this->encoding};";
+  }
+
+
 }
