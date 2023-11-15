@@ -1,0 +1,29 @@
+{
+    "name": "tribal2/db-handler",
+    "description": "Library to interact with MySQL databases",
+    "type": "library",
+    "require": {
+        "panique/pdo-debug": "^0.2.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.24",
+        "mockery/mockery": "^1.6"
+    },
+    "license": "private",
+    "autoload": {
+        "psr-4": {
+            "Tribal2\\DbHandler\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ricardo Tribaldos"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
