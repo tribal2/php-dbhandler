@@ -6,9 +6,11 @@ class DbHandler {
 
   private static $instances = [];
 
-  private static LoggerInterface $logger;
+  private static ?LoggerInterface $logger = NULL;
 
-  private static CacheInterface $cache;
+  private static ?CacheInterface $cache = NULL;
+
+  private static bool $isReadOnlyMode = FALSE;
 
 
   /**
@@ -32,6 +34,21 @@ class DbHandler {
   const ERR_REPETIDO = 'Ya este registro existe en la base de datos.';
 
 
+  final public static function setLogger(LoggerInterface $logger) {
+    self::$logger = $logger;
+  }
+
+
+  final public static function setCache(CacheInterface $cache) {
+    self::$cache = $cache;
+  }
+
+
+  final public static function setReadOnlyMode(bool $mode) {
+    self::$isReadOnlyMode = $mode;
+  }
+
+
   /**
    * Singleton. Todos las instancias singleton de esta clase y clase heredadas, usan PDOSingleton
    * @return static
@@ -51,12 +68,12 @@ class DbHandler {
    * @param PDO $pdo (optional)
    */
   public function __construct(PDO $pdo = NULL) {
-    if (self::$logger === NULL) {
-      self::$logger = new Logger();
+    if (DbHandler::$logger === NULL) {
+      DbHandler::$logger = new Logger();
     }
 
-    if (self::$cache === NULL) {
-      self::$cache = new Cache();
+    if (DbHandler::$cache === NULL) {
+      DbHandler::$cache = new Cache();
     }
 
     self::$logger::log();
@@ -176,7 +193,7 @@ class DbHandler {
     try {
       self::$logger::log();
 
-      $inCache = self::$cache::get(__METHOD__, func_get_args());
+      $inCache = self::$cache->get(__METHOD__, func_get_args());
       if (!empty($inCache)) { return $inCache; }
 
       // Obtenemos el nombre de la base de datos
@@ -228,7 +245,7 @@ class DbHandler {
         }
       }
 
-      self::$cache::set(__METHOD__, func_get_args(), $columns);
+      self::$cache->set(__METHOD__, func_get_args(), $columns);
 
       self::$logger::log($columns, "{$table} >>>");
       return $columns;
@@ -1229,8 +1246,6 @@ class DbHandler {
     try {
       self::$logger::log();
 
-      $dbName = Helper::getSettings('database', 'dbname');
-
       $columns = is_string($info)
         ? $info
         : implode(', ', $info);
@@ -1241,7 +1256,7 @@ class DbHandler {
         . "WHERE TABLE_SCHEMA = :db AND TABLE_NAME = :table;";
 
       $sth = $this->dbh->prepare($query);
-      $sth->bindValue(':db', $dbName);
+      $sth->bindValue(':db', PDOSingleton::getDBName());
       $sth->bindValue(':table', $table);
 
       $sth->execute();
@@ -1334,10 +1349,7 @@ class DbHandler {
   public function checkIfInReadOnlyMode() {
     self::$logger::log();
 
-    // Obtenemos objeto de configuración
-    $dbCfg = Helper::getSettings('database');
-
-    if ($dbCfg->readonly) {
+    if (self::$isReadOnlyMode) {
       $msg = 'En este momento el sistema solo está habilitado para consultas.';
       throw new Exception($msg, 503);
     }
