@@ -16,7 +16,7 @@ interface CacheInterface {
    *
    * @return mixed Datos almacenados en cache (NULL si no se encuentra nada)
    */
-  public static function get(string $group, $key);
+  public function get(string $group, $key);
 
 
   /**
@@ -30,7 +30,7 @@ interface CacheInterface {
    *                      originado con func_get_args())
    * @param mixed  $data  Datos a incluir en el cache
    */
-  public static function set(string $group, $key, $data): void;
+  public function set(string $group, $key, $data): void;
 
 
 }

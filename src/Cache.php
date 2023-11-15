@@ -9,7 +9,7 @@ class Cache implements CacheInterface {
    * Array de datos en cache
    * @var array
    */
-  private static $data = [];
+  private array $cache = [];
 
 
   /**
@@ -22,19 +22,16 @@ class Cache implements CacheInterface {
    *                      originado con func_get_args())
    *
    * @return mixed Datos almacenados en cache (NULL si no se encuentra nada)
-   * @throws Exception
    */
-  final public static function get(string $group, $key) {
-    $cache = &self::$data;
-
+  final public function get(string $group, $key) {
     // Codificamos llave
     $argKey = json_encode($key);
 
     if (
       isset($cache[$group])
-      && isset($cache[$group][$argKey])
+      && isset($this->cache[$group][$argKey])
     ) {
-      $data = $cache[$group][$argKey];
+      $data = $this->cache[$group][$argKey];
       return is_object($data) ? clone $data : $data;
     }
 
@@ -55,25 +52,23 @@ class Cache implements CacheInterface {
    *
    * @throws Exception
    */
-  final public static function set(string $group, $key, $data): void {
-    $cache = &self::$data;
-
+  final public function set(string $group, $key, $data): void {
     // Creamos el grupo si no existe
-    if (!isset($cache[$group])) {
-      $cache[$group] = [];
+    if (!isset($this->cache[$group])) {
+      $this->cache[$group] = [];
     }
 
     // Codificamos key
     $argKey = json_encode($key);
 
     // Almacenamos datos
-    $cache[$group][$argKey] = is_object($data) ? clone $data : $data;
+    $this->cache[$group][$argKey] = is_object($data) ? clone $data : $data;
   }
 
 
   // phpcs:disable Squiz.WhiteSpace.FunctionSpacing.After
-  private function __construct() {}
   private function __clone() {}
+  public function __construct() {}
   public function __wakeup() {}
   // phpcs:enable
 }
