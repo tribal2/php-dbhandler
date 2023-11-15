@@ -3,7 +3,7 @@
 {
 	"name": "DbHandler",
 	"dockerComposeFile": "./docker-compose.yml",
-	"service": "php",
+	"service": "dbhandler",
 	"workspaceFolder": "/dbhandler",
 
 	"customizations": {

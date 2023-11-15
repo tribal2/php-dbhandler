@@ -1,4 +1,33 @@
-FROM composer
+ARG PHP_VERSION=8.2
+ARG ALPINE_VERSION=3.18
+ARG COMPOSER_VERSION=latest
+
+FROM composer:${COMPOSER_VERSION} AS composer
+
+FROM php:${PHP_VERSION}-cli-alpine${ALPINE_VERSION}
+
+# Copiamos Composer PHAR desde la imagen de composer
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
+RUN set -ex \
+    && apk --update add --no-cache --virtual .php-ext-install-deps \
+        $PHPIZE_DEPS \
+        autoconf \
+    && docker-php-ext-install -j$(nproc) \
+    && runDeps="$( \
+        scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+            | tr ',' '\n' \
+            | sort -u \
+            | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+    )" \
+    && apk add --no-cache $runDeps \
+    && docker-php-source delete \
+    && apk del --no-network .php-ext-install-deps \
+    # Set America/Panama timezone
+    && apk --update add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/America/Panama /etc/localtime \
+    && echo "America/Panama" > /etc/timezone \
+    && apk del tzdata
 
 #***********#
 # OS SETUP  #
@@ -40,7 +69,6 @@ COPY ./composer.* /dbhandler/
 RUN chown -R devcontainer:devcontainer \
         /dbhandler \
         /home/devcontainer \
-
     # Fix bug in ikappas/vscode-phpcs with squizlabs/php_codesniffer when XDebug is
     # enabled. For more info, see:
     # https://github.com/ikappas/vscode-phpcs/issues/189#issue-815494036
