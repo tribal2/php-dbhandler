@@ -6,6 +6,8 @@ class DbHandler {
 
   private static $instances = [];
 
+  private static LoggerInterface $logger;
+
 
   /**
    * Objeto PDO
@@ -33,7 +35,6 @@ class DbHandler {
    * @return static
    */
   final public static function getInstance(): static {
-    Helper::bsLog();
     $class = get_called_class();
     if (!isset(self::$instances[$class])) {
       self::$instances[$class] = new static();
@@ -48,97 +49,84 @@ class DbHandler {
    * @param PDO $pdo (optional)
    */
   public function __construct(PDO $pdo = NULL) {
-    Helper::bsLog();
+    if (self::$logger === NULL) {
+      self::$logger = new Logger();
+    }
+
+    self::$logger->log();
+    self::$logger::log();
     $this->setDBH($pdo);
   }
 
 
   private function setDBH(?PDO $pdo = NULL) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      // Si no se provee una instancia de PDO, usamos PDOSingleton
-      $this->dbh = $pdo ?? PDOSingleton::get();
-    }
-
-    catch (Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    // Si no se provee una instancia de PDO, usamos PDOSingleton
+    $this->dbh = $pdo ?? PDOSingleton::get();
   }
 
 
   private function resetDBH(?PDO $pdo = NULL) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      PDOSingleton::destroy();
+    PDOSingleton::destroy();
 
-      // @todo 1 hay que actualizar el objeto PDO en cada instancia
-      // foreach (self::$instances as $instance) {
-      //   $instance->setDBH($pdo);
-      // }
+    // @todo 1 hay que actualizar el objeto PDO en cada instancia
+    // foreach (self::$instances as $instance) {
+    //   $instance->setDBH($pdo);
+    // }
 
-      $this->setDBH($pdo);
-    }
-
-    catch (Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    $this->setDBH($pdo);
   }
 
 
   final public function disableCommits() {
-    Helper::bsLog();
+    self::$logger::log();
     PDOSingleton::setCommitsModeOff();
   }
 
 
   final public function enableCommits() {
-    Helper::bsLog();
+    self::$logger::log();
     PDOSingleton::setCommitsModeOn();
   }
 
 
   final public function transactionManager($action) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      switch($action) {
-        case 'begin':
-          if ($this->dbh->inTransaction()) {
-            Helper::bsLog('>>> Ya hay una transacción iniciada.');
-            return NULL;
-          }
-          return $this->dbh->beginTransaction();
+    switch($action) {
+      case 'begin':
+        if ($this->dbh->inTransaction()) {
+          self::$logger::log('>>> Ya hay una transacción iniciada.');
+          return NULL;
+        }
+        return $this->dbh->beginTransaction();
 
-        case 'commit':
-          if (!$this->dbh->inTransaction()) {
-            Helper::bsLog('>>> No hay ninguna transacción iniciada.');
-            return NULL;
-          }
-          if (PDOSingleton::getCommitsMode() === PDOCommitModeEnum::OFF) {
-            Helper::bsLog('>>> Los commits están desabilitados.');
-            return NULL;
-          }
-          return $this->dbh->commit();
+      case 'commit':
+        if (!$this->dbh->inTransaction()) {
+          self::$logger::log('>>> No hay ninguna transacción iniciada.');
+          return NULL;
+        }
+        if (PDOSingleton::getCommitsMode() === PDOCommitModeEnum::OFF) {
+          self::$logger::log('>>> Los commits están desabilitados.');
+          return NULL;
+        }
+        return $this->dbh->commit();
 
-        case 'rollback':
-          if (!$this->dbh->inTransaction()) {
-            Helper::bsLog('>>> No hay ninguna transacción iniciada.');
-            return NULL;
-          }
-          return $this->dbh->rollBack();
+      case 'rollback':
+        if (!$this->dbh->inTransaction()) {
+          self::$logger::log('>>> No hay ninguna transacción iniciada.');
+          return NULL;
+        }
+        return $this->dbh->rollBack();
 
-        case 'check':
-          return $this->dbh->inTransaction();
+      case 'check':
+        return $this->dbh->inTransaction();
 
-        default:
-          throw new Exception('Acción desconocida.');
-      }
-    }
-
-    catch (Exception $e) {
-      throw Helper::getSysErrorException($e);
+      default:
+        throw new Exception('Acción desconocida.');
     }
   }
 
@@ -153,7 +141,7 @@ class DbHandler {
    */
   public function checkIfTableExists($table) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       // Creamos la consulta y la ejecutamos
       $query = "SHOW TABLES LIKE :table;";
@@ -166,7 +154,7 @@ class DbHandler {
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -179,11 +167,11 @@ class DbHandler {
    * @return stdClass Objeto[] con las propiedades 'all', 'non', 'key' e 'inc'
    * @throws Exception
    */
-  public function getTableColumns(string $table):stdClass {
+  public function getTableColumns(string $table): stdClass {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
-      $inCache = Cache::get(__METHOD__, func_get_args());
+      $inCache = self::$cache::get(__METHOD__, func_get_args());
       if (!empty($inCache)) { return $inCache; }
 
       // Obtenemos el nombre de la base de datos
@@ -206,16 +194,16 @@ class DbHandler {
 
       // Pegamos variables y ejecutamos consulta
       $sth = $this->dbh->prepare($query);
-      Helper::bsLog($query, "QUERY");
+      self::$logger::log($query, "QUERY");
       $sth->bindValue(':db', $this->dbName);
-      Helper::bsLog($this->dbName, ":db");
+      self::$logger::log($this->dbName, ":db");
       $sth->bindValue(':table', $table);
-      Helper::bsLog($table, ":table");
+      self::$logger::log($table, ":table");
 
       $sth->execute();
 
       $dbColumns = $sth->fetchAll(PDO::FETCH_OBJ);
-      Helper::bsLog($dbColumns, "RESULTS");
+      self::$logger::log($dbColumns, "RESULTS");
 
       $columns = new stdClass;
       $columns->all = [];
@@ -235,14 +223,14 @@ class DbHandler {
         }
       }
 
-      Cache::set(__METHOD__, func_get_args(), $columns);
+      self::$cache::set(__METHOD__, func_get_args(), $columns);
 
-      Helper::bsLog($columns, "{$table} >>>");
+      self::$logger::log($columns, "{$table} >>>");
       return $columns;
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -260,7 +248,7 @@ class DbHandler {
    */
   public function checkIfExists(string $tab, $keyVal, $val = '') {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $baseQuery = "SELECT * FROM $tab WHERE ";
 
@@ -286,12 +274,12 @@ class DbHandler {
       $sth->execute();
       $exists = $sth->rowCount() > 0;
 
-      Helper::bsLog($exists, '>>>');
+      self::$logger::log($exists, '>>>');
       return $exists;
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -320,7 +308,7 @@ class DbHandler {
   ) {
     //@todo 3 Renombrar a getData() y hacer refactor
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $bindBuilder = new PDOBindBuilder();
 
@@ -397,8 +385,8 @@ class DbHandler {
       // Creamos la consulta y la ejecutamos
       $query = "SELECT $cols FROM $table $queryEnd;";
       $sth = $this->dbh->prepare($query);
-      Helper::bsLog([$query, $bindBuilder->getValues()], '$query');
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Query');
+      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
@@ -412,13 +400,13 @@ class DbHandler {
         $formato = $fetch_style;
       }
 
-      Helper::bsLog($sth->rowCount(), 'Filas');
+      self::$logger::log($sth->rowCount(), 'Filas');
 
       return $sth->fetchAll($formato);
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -438,27 +426,25 @@ class DbHandler {
    * @return array|null Array con datos encontrados en la base de datos. Si no existen, se devuelve NULL
    */
   public function getData($table, $columns = '*', $where = '', $limit = 0, $sort = [], $fetch_style = TRUE) {
-    try {
-      Helper::bsLog();
-      Helper::bsLogWarning(NULL, '##DEPRECATION NOTICE## Rename method to getDataOrNull()');
+    self::$logger::log();
+    self::$logger::log(
+      NULL,
+      '##DEPRECATION NOTICE## Rename method to getDataOrNull()',
+      Logger::WARNING,
+    );
 
-      $getDataArr = $this->getDataArr(
-        $table,
-        $columns,
-        $where,
-        $limit,
-        $sort,
-        $fetch_style
-      );
+    $getDataArr = $this->getDataArr(
+      $table,
+      $columns,
+      $where,
+      $limit,
+      $sort,
+      $fetch_style
+    );
 
-      return (count($getDataArr) > 0)
-        ? $getDataArr
-        : NULL;
-    }
-
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    return (count($getDataArr) > 0)
+      ? $getDataArr
+      : NULL;
   }
 
 
@@ -476,24 +462,18 @@ class DbHandler {
    * @return array|null Array con datos encontrados en la base de datos. Si no existen, se devuelve NULL
    */
   public function getDataOrNull($table, $columns = '*', $where = '', $limit = 0, $sort = [], $fetch_style = TRUE) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $getDataArr = $this->getDataArr(
-        $table,
-        $columns,
-        $where,
-        $limit,
-        $sort,
-        $fetch_style
-      );
+    $getDataArr = $this->getDataArr(
+      $table,
+      $columns,
+      $where,
+      $limit,
+      $sort,
+      $fetch_style
+    );
 
-      return $getDataArr ? $getDataArr : NULL;
-    }
-
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    return $getDataArr ? $getDataArr : NULL;
   }
 
 
@@ -507,27 +487,21 @@ class DbHandler {
    * @throws Exception
    */
   public function getDataRow($table, array $where = [], $columns = '*') {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $dbData = (is_array($table) || is_object($table))
-        ? $this->getDataArr($table)
-        : $this->getDataArr($table, $columns, $where);
+    $dbData = (is_array($table) || is_object($table))
+      ? $this->getDataArr($table)
+      : $this->getDataArr($table, $columns, $where);
 
-      $dbDataCount = count($dbData);
+    $dbDataCount = count($dbData);
 
-      if ($dbDataCount > 1) {
-        Helper::bsLogWarning('>>> Este query genera más de 1 resultado.');
-      }
-
-      return ($dbDataCount === 0)
-        ? NULL
-        : $dbData[0];
+    if ($dbDataCount > 1) {
+      self::$logger::log(NULL, '>>> Este query genera más de 1 resultado.', Logger::WARNING);
     }
 
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    return ($dbDataCount === 0)
+      ? NULL
+      : $dbData[0];
   }
 
 
@@ -545,22 +519,16 @@ class DbHandler {
     string $column,
     array $where = [],
   ): array {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $query = [
-        'table' => $table,
-        'columns' => $column,
-        'where' => $where,
-        'fetch_style' => PDO::FETCH_COLUMN,
-      ];
+    $query = [
+      'table' => $table,
+      'columns' => $column,
+      'where' => $where,
+      'fetch_style' => PDO::FETCH_COLUMN,
+    ];
 
-      return self::getDataArr($query);
-    }
-
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    return self::getDataArr($query);
   }
 
 
@@ -580,48 +548,41 @@ class DbHandler {
     $where = NULL,
     $sort = [],
   ) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $tab = is_array($table) ? $table['table'] : $table;
-      $col = is_array($table) ? $table['columns'] : $column;
-      $whr = is_array($table) ? $table['where'] : $where;
-      $srt = is_array($table)
-        ? (
-            empty($table['sort'])
-              ? []
-              : $table['sort']
-          )
-        : $sort;
+    $tab = is_array($table) ? $table['table'] : $table;
+    $col = is_array($table) ? $table['columns'] : $column;
+    $whr = is_array($table) ? $table['where'] : $where;
+    $srt = is_array($table)
+      ? (
+          empty($table['sort'])
+            ? []
+            : $table['sort']
+        )
+      : $sort;
 
-      if (
-        !is_string($col)
-        || strpos($col, ' ') !== FALSE
-        || strpos($col, ',') !== FALSE
-      ) {
-        $col_err = 'El parámetro columna sólo acepta cadenas de texto sin '
-          . 'espacios ni comas, ya que solo se puede especificar una columna.';
-        throw new Exception($col_err, 500);
-      }
-
-      $query = [
-        'table' => $tab,
-        'columns' => $col,
-        'where' => $whr,
-        'sort' => $srt,
-        'limit' => 1,
-        'fetch_style' => PDO::FETCH_COLUMN
-      ];
-      $dbData = $this->getDataArr($query);
-
-      Helper::bsLog($dbData, '>>>');
-      return $dbData ? $dbData[0] : NULL;
+    if (
+      !is_string($col)
+      || strpos($col, ' ') !== FALSE
+      || strpos($col, ',') !== FALSE
+    ) {
+      $col_err = 'El parámetro columna sólo acepta cadenas de texto sin '
+        . 'espacios ni comas, ya que solo se puede especificar una columna.';
+      throw new Exception($col_err, 500);
     }
 
-    catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
-      throw Helper::getSysErrorException($e);
-    }
+    $query = [
+      'table' => $tab,
+      'columns' => $col,
+      'where' => $whr,
+      'sort' => $srt,
+      'limit' => 1,
+      'fetch_style' => PDO::FETCH_COLUMN
+    ];
+    $dbData = $this->getDataArr($query);
+
+    self::$logger::log($dbData, '>>>');
+    return $dbData ? $dbData[0] : NULL;
   }
 
 
@@ -635,7 +596,7 @@ class DbHandler {
    */
   public function getDistincts($table, $column) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       // Validamos los parámetros
       $params = [$table, $column];
@@ -653,18 +614,18 @@ class DbHandler {
 
       // Creamos la consulta y la ejecutamos
       $query = "SELECT DISTINCT(`{$column}`) FROM {$table};";
-      Helper::bsLog($query, '$query');
+      self::$logger::log($query, '$query');
       $sth = $this->dbh->prepare($query);
       $sth->execute();
 
-      Helper::bsLog($sth->rowCount(), 'Filas');
+      self::$logger::log($sth->rowCount(), 'Filas');
       return ($sth->rowCount() > 0)
               ? $sth->fetchAll(PDO::FETCH_COLUMN)
               : NULL;
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -687,7 +648,7 @@ class DbHandler {
     array  $where = [],
   ) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $operatorToFunc = [
         'min' => 'MIN',
@@ -714,25 +675,25 @@ class DbHandler {
       // Creamos la consulta y la ejecutamos
       $query = "SELECT $sqlFunction($column) FROM $table$queryEnd;";
       $sth = $this->dbh->prepare($query);
-      Helper::bsLog([$query, $bindBuilder->getValues()], '$query');
+      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Final query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Final query');
       $sth->execute();
 
-      Helper::bsLog($sth->rowCount(), 'Filas');
+      self::$logger::log($sth->rowCount(), 'Filas');
 
       $dbData = $sth->fetchAll(PDO::FETCH_COLUMN);
 
-      Helper::bsLog($dbData, '>>>');
+      self::$logger::log($dbData, '>>>');
 
       return $dbData ? $dbData[0] : NULL;
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -748,7 +709,7 @@ class DbHandler {
    */
   public function executeQuery(string $query, PDOBindBuilder $bindBuilder) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $this->checkIfInReadOnlyMode();
 
@@ -759,16 +720,16 @@ class DbHandler {
         throw new Exception('Tipo de query no permitido.');
       }
 
-      Helper::bsLog([$query, $bindBuilder->getValues()], '$query');
+      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
       $sth = $this->dbh->prepare($query);
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Final query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Final query');
       $sth->execute();
 
-      Helper::bsLog($sth->rowCount(), 'Líneas afectadas:');
+      self::$logger::log($sth->rowCount(), 'Líneas afectadas:');
 
       return ($queryType === 'SELECT')
         ? $sth->fetchAll(PDO::FETCH_OBJ)
@@ -776,7 +737,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -796,7 +757,7 @@ class DbHandler {
    */
   public function callProcedure($procName, $params = '', $fetchObj = TRUE) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       // Configuramos los parámetros
       if(is_array($params)) {
@@ -810,7 +771,7 @@ class DbHandler {
       }
 
       $query = "CALL $procName($procParams);";
-      Helper::bsLog($query, '$query');
+      self::$logger::log($query, '$query');
 
       $sth = $this->dbh->prepare($query);
 
@@ -818,12 +779,12 @@ class DbHandler {
       if(is_array($params)) {
         foreach($params as $key => $value) {
           $sth->bindValue(":{$key}", $value);
-          Helper::bsLog($value, ":{$key}");
+          self::$logger::log($value, ":{$key}");
         }
       }
 
       $sth->execute();
-      Helper::bsLog($sth->rowCount(), 'Resultados');
+      self::$logger::log($sth->rowCount(), 'Resultados');
 
       // Configuramos el formato de respuesta
       $formato = $fetchObj ? PDO::FETCH_OBJ : PDO::FETCH_ASSOC;
@@ -834,7 +795,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -849,7 +810,7 @@ class DbHandler {
    */
   public function setData(string $table, $postData) {
     try{
-      Helper::bsLog();
+      self::$logger::log();
 
       $bindBuilder = new PDOBindBuilder();
 
@@ -908,17 +869,17 @@ class DbHandler {
       $query = "INSERT INTO {$table} ({$qColumns}) VALUES ({$qParams});";
 
       $sth = $this->dbh->prepare($query);
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
 
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
 
       $sth->execute();
-      Helper::bsLog('>>> OK');
+      self::$logger::log('>>> OK');
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -943,13 +904,13 @@ class DbHandler {
    */
   public function setDataMulti(string $table, array $postData) {
     try{
-      Helper::bsLog();
+      self::$logger::log();
 
       $this->checkIfInReadOnlyMode();
 
       // Nos aseguramos que $postData sea un array y contenga información
       if (!is_array($postData) || empty($postData)) {
-        Helper::bsLog('>>> NO DATA');
+        self::$logger::log('>>> NO DATA');
         return 'NO DATA';
       }
 
@@ -995,8 +956,8 @@ class DbHandler {
       $queryValuesList = implode(', ', $queryRows);
 
       $query = "INSERT INTO {$table} ({$queryColsList}) VALUES {$queryValuesList};";
-      Helper::bsLog($query, '$query');
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Query');
+      self::$logger::log($query, '$query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
       $sth = $this->dbh->prepare($query);
 
       // Hacemos bind de los parámetros
@@ -1004,7 +965,7 @@ class DbHandler {
 
       // Ejecutamos el query
       $sth->execute();
-      Helper::bsLog('>>> OK');
+      self::$logger::log('>>> OK');
 
       // Devolvemos mensaje de confirmación
       $insertCount = count($data);
@@ -1012,7 +973,7 @@ class DbHandler {
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1030,7 +991,7 @@ class DbHandler {
    */
   public function updateData($table, $putData, bool $ignoreNull = TRUE) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $this->checkIfInReadOnlyMode();
 
@@ -1124,16 +1085,16 @@ class DbHandler {
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      Helper::bsLog($query, '$query');
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Query');
+      self::$logger::log($query, '$query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
 
       // Ejecutamos el query
       $sth->execute();
-      Helper::bsLog('>>> OK');
+      self::$logger::log('>>> OK');
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1149,39 +1110,33 @@ class DbHandler {
    * @throws Exception
    */
   public function setUpdateData($table, array $dataArr, bool $ignoreNull = TRUE) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $this->checkIfInReadOnlyMode();
+    $this->checkIfInReadOnlyMode();
 
-      $checkDataArr = [];
+    $checkDataArr = [];
 
-      // Verificamos si los datos ya existen
-      $tblCols = $this->getTableColumns($table);
-      foreach ($tblCols->key as $keyColName) {
-        if (isset($dataArr[$keyColName])) {
-          $checkDataArr[$keyColName] = isset($dataArr['oldKey'])
-            ? $dataArr['oldKey'][$keyColName]
-            : $dataArr[$keyColName];
-        }
-      }
-
-      // Si ya existe un registro con el valor de las 'key columns'
-      // suministradas, actualizamos datos...
-      if (!empty($checkDataArr) && $this->checkIfExists($table, $checkDataArr)) {
-        Helper::bsLog(">>> Ya existe, actualizando registro");
-        $this->updateData($table, $dataArr, $ignoreNull);
-      }
-
-      // ..si no existe, registramos nuevos datos
-      else {
-        Helper::bsLog(">>> Creando registro");
-        $this->setData($table, $dataArr);
+    // Verificamos si los datos ya existen
+    $tblCols = $this->getTableColumns($table);
+    foreach ($tblCols->key as $keyColName) {
+      if (isset($dataArr[$keyColName])) {
+        $checkDataArr[$keyColName] = isset($dataArr['oldKey'])
+          ? $dataArr['oldKey'][$keyColName]
+          : $dataArr[$keyColName];
       }
     }
 
-    catch (Exception $e) {
-      throw Helper::getSysErrorException($e);
+    // Si ya existe un registro con el valor de las 'key columns'
+    // suministradas, actualizamos datos...
+    if (!empty($checkDataArr) && $this->checkIfExists($table, $checkDataArr)) {
+      self::$logger::log(">>> Ya existe, actualizando registro");
+      $this->updateData($table, $dataArr, $ignoreNull);
+    }
+
+    // ..si no existe, registramos nuevos datos
+    else {
+      self::$logger::log(">>> Creando registro");
+      $this->setData($table, $dataArr);
     }
   }
 
@@ -1200,7 +1155,7 @@ class DbHandler {
    */
   public function deleteData($table, $idData) {
     try{
-      Helper::bsLog();
+      self::$logger::log();
 
       $this->checkIfInReadOnlyMode();
 
@@ -1235,8 +1190,8 @@ class DbHandler {
       }
 
       $sth = $this->dbh->prepare($query);
-      Helper::bsLog($query, '$query');
-      Helper::bsLog($bindBuilder->debugQuery($query), 'Query');
+      self::$logger::log($query, '$query');
+      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
 
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
@@ -1244,14 +1199,14 @@ class DbHandler {
       // EJECUTAMOS EL QUERY Y GENERAMOS RESPUESTA
       $sth->execute();
       $eliminados = $sth->rowCount();
-      Helper::bsLog(">>> OK --({$eliminados} registros borrados)");
+      self::$logger::log(">>> OK --({$eliminados} registros borrados)");
 
       // Devolvemos mensaje de confirmación
       return $eliminados;
     }
 
     catch (Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1267,7 +1222,7 @@ class DbHandler {
    */
   public function getSchemaInfo($table, $info = '*') {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $dbName = Helper::getSettings('database', 'dbname');
 
@@ -1299,7 +1254,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1313,7 +1268,7 @@ class DbHandler {
    */
   public function getRowCount($table) {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       // Creamos la consulta y la ejecutamos
       $query = "SELECT COUNT(*) FROM $table";
@@ -1324,7 +1279,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { Helper::bsLog($query, '$query'); }
+      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1338,66 +1293,48 @@ class DbHandler {
    * @throws Exception
    */
   public function getLastInsertId() {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $lastInsertId = $this->dbh->lastInsertId();
-      Helper::bsLog(">>> {$lastInsertId}");
+    $lastInsertId = $this->dbh->lastInsertId();
+    self::$logger::log(">>> {$lastInsertId}");
 
-      return $lastInsertId;
-    }
-
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    return $lastInsertId;
   }
 
 
   private function checkValue($value, $column = NULL) {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      // Verificamos tipos permitidos
-      if (
-        is_string($value)
-        || is_numeric($value)
-        || is_null($value)
-        || is_bool($value)
-      ) {
-        return;
-      }
-
-      $valType = gettype($value);
-      $e = 'El valor a escribir en la base de datos debe ser una cadena '
-            . 'de caracteres o un número. El valor ingresado ';
-      $e .= isset($column)
-        ? "para '{$column}' "
-        : '';
-      $e .= "es de tipo '{$valType}'.";
-      throw new Exception($e, 500);
+    // Verificamos tipos permitidos
+    if (
+      is_string($value)
+      || is_numeric($value)
+      || is_null($value)
+      || is_bool($value)
+    ) {
+      return;
     }
 
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
-    }
+    $valType = gettype($value);
+    $e = 'El valor a escribir en la base de datos debe ser una cadena '
+          . 'de caracteres o un número. El valor ingresado ';
+    $e .= isset($column)
+      ? "para '{$column}' "
+      : '';
+    $e .= "es de tipo '{$valType}'.";
+    throw new Exception($e, 500);
   }
 
 
   public function checkIfInReadOnlyMode() {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      // Obtenemos objeto de configuración
-      $dbCfg = Helper::getSettings('database');
+    // Obtenemos objeto de configuración
+    $dbCfg = Helper::getSettings('database');
 
-      if ($dbCfg->readonly) {
-        $msg = 'En este momento el sistema solo está habilitado para consultas.';
-        throw new Exception($msg, 503);
-      }
-    }
-
-    catch (Exception $e) {
-      throw Helper::getSysErrorException($e);
+    if ($dbCfg->readonly) {
+      $msg = 'En este momento el sistema solo está habilitado para consultas.';
+      throw new Exception($msg, 503);
     }
   }
 
@@ -1414,7 +1351,7 @@ class DbHandler {
     array $where,
   ): string {
     try {
-      Helper::bsLog();
+      self::$logger::log();
 
       $whereArr = [];
       foreach($where as $key => $val) {
@@ -1456,69 +1393,63 @@ class DbHandler {
     string $key,
     array $valueArr,
   ): string {
-    try {
-      Helper::bsLog();
+    self::$logger::log();
 
-      $_key = $this->quoteWrap($key);
+    $_key = $this->quoteWrap($key);
 
-      $whereArr = [];
+    $whereArr = [];
 
-      $orClause = [];
-      $andClause = [];
+    $orClause = [];
+    $andClause = [];
 
-      foreach($valueArr as $valValue) {
-        // Si el elemento no es otro array..
-        if (!is_array($valValue)) {
-          $orClause[] = is_null($valValue)
-            ? "{$_key} IS NULL"
-            : "{$_key} LIKE " . $bindBuilder->addValue($valValue);
+    foreach($valueArr as $valValue) {
+      // Si el elemento no es otro array..
+      if (!is_array($valValue)) {
+        $orClause[] = is_null($valValue)
+          ? "{$_key} IS NULL"
+          : "{$_key} LIKE " . $bindBuilder->addValue($valValue);
 
-          continue;
+        continue;
+      }
+
+      // ..si es otro array
+      $operator = $this->validateOperator($valValue['operator']);
+      $value = $valValue['value'];
+
+      if (!is_null($value)) {
+        $placeholderValue = $bindBuilder->addValue($value);
+        $clause = "{$_key} {$operator} {$placeholderValue}";
+        // Si se provee la propiedad 'and', se hará un query así:
+        // (valor > 3 AND valor < 10)
+        if (isset($valValue['and']) && $valValue['and']) {
+          $andClause[] = $clause;
         }
-
-        // ..si es otro array
-        $operator = $this->validateOperator($valValue['operator']);
-        $value = $valValue['value'];
-
-        if (!is_null($value)) {
-          $placeholderValue = $bindBuilder->addValue($value);
-          $clause = "{$_key} {$operator} {$placeholderValue}";
-          // Si se provee la propiedad 'and', se hará un query así:
-          // (valor > 3 AND valor < 10)
-          if (isset($valValue['and']) && $valValue['and']) {
-            $andClause[] = $clause;
-          }
-          // Si NO se provee la propiedad 'and':
-          // (valor > 3 OR valor < 10)
-          else {
-            $orClause[] = $clause;
-          }
+        // Si NO se provee la propiedad 'and':
+        // (valor > 3 OR valor < 10)
+        else {
+          $orClause[] = $clause;
         }
       }
-
-      if (count($orClause) > 0) {
-        $orClauseStr = implode(' OR ', $orClause);
-        $whereArr[] = "({$orClauseStr})";
-      }
-
-      if (count($andClause) > 0) {
-        $andClauseStr = implode(' AND ', $andClause);
-        $whereArr[] = "({$andClauseStr})";
-      }
-
-      return implode(' AND ', $whereArr);
     }
 
-    catch(Exception $e) {
-      throw Helper::getSysErrorException($e);
+    if (count($orClause) > 0) {
+      $orClauseStr = implode(' OR ', $orClause);
+      $whereArr[] = "({$orClauseStr})";
     }
+
+    if (count($andClause) > 0) {
+      $andClauseStr = implode(' AND ', $andClause);
+      $whereArr[] = "({$andClauseStr})";
+    }
+
+    return implode(' AND ', $whereArr);
   }
 
 
   /**
    * Método para manejar excepciones de la clase
    *
-   * @param Exception $e
+   * @param PDOException $e
    * @param string    $method
    * @param array     $arguments
    *
@@ -1530,12 +1461,12 @@ class DbHandler {
     array $arguments,
   ) {
     if (!($e instanceof PDOException)) {
-      throw Helper::getSysErrorException($e);
+      throw $e;
     }
 
     // https://mariadb.com/kb/en/mariadb-error-codes/
     list($sqlState, $errorCode, $errorDesc) = $e->errorInfo;
-    Helper::bsLog("{$errorCode}: {$errorDesc}", $sqlState);
+    self::$logger::log("{$errorCode}: {$errorDesc}", $sqlState);
 
     $errorMsg = $e->getMessage();
     $defaultErrMsg = 'No se pudo hacer la operación con la base de datos.';
@@ -1547,7 +1478,7 @@ class DbHandler {
           // Reintentamos la conexión
           $log = ">>> La conexión con la base de datos se ha perdido. "
                 . "Se intentará reconectar...";
-          Helper::bsLog([], $log);
+          self::$logger::log([], $log);
           $this->resetDBH();
           return $this->$method(...$arguments);
         }
