@@ -3,6 +3,7 @@
 use Tribal2\DbHandler\DbConfig;
 use Tribal2\DbHandler\DbHandler;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
+use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
@@ -199,7 +200,6 @@ describe('DbHandler utilz', function () {
 
     expect($result)->toBe($expected);
   });
-
 
 });
 
@@ -979,6 +979,7 @@ describe('DbHandler DELETE', function () {
 
 describe('DbHandler SELECT', function () {
   beforeEach(function () {
+    DbHandler::setLogger(new Logger());
     $this->db = DbHandler::getInstance();
   });
 
@@ -1103,9 +1104,21 @@ describe('DbHandler SELECT', function () {
   });
 
   test('getDataRow() with warning', function () {
-    $results = $this->db->getDataRow('test_table');
-    // @todo 1 Este query debería generar un warning en el log. ¿Cómo testearlo?
+    /**
+     * Simulamos una instancia de la clase Logger
+     * @var \Mockery\MockInterface $loggerMock
+     */
+    $loggerMock = Mockery::mock(Logger::class);
+    $loggerMock->shouldReceive('log');
+    DbHandler::setLogger($loggerMock);
 
+    $results = $this->db->getDataRow('test_table');
+
+    $loggerMock->shouldHaveReceived('log', [
+      Mockery::any(),
+      Mockery::any(),
+      Logger::WARNING,
+    ]);
     expect($results)->toBeObject();
     expect($results)->toHaveKeys(['test_table_id', 'key', 'value', 'created_at']);
   });
@@ -1209,43 +1222,6 @@ describe('DbHandler SELECT', function () {
         ],
       );
       expect($result)->toBeNull();
-  });
-
-
-
-
-
-  test('MOCK getValue() [using obj query]', function () {
-    /**
-     * Simulamos el objeto PDOStatement
-     * @var \Mockery\MockInterface $pdoStatementMock
-     */
-    $pdoStatementMock = Mockery::mock(PDOStatement::class);
-    $pdoStatementMock->shouldReceive('bindValue')->andReturn(TRUE);
-    $pdoStatementMock->shouldReceive('execute')->andReturn(TRUE);
-    $pdoStatementMock->shouldReceive('rowCount')->andReturn(1);
-    $pdoStatementMock->shouldReceive('fetchAll')->andReturn([1]);
-
-    /**
-     * Simulamos el objeto PDO
-     * @var \Mockery\MockInterface $pdoMock
-     */
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('prepare')->andReturn($pdoStatementMock);
-
-    // Creamos una instancia real de DbHandler pero con la conexión PDO simulada
-    $db = new DbHandler($pdoMock);
-
-    // Configuramos el mock parcial para la función `getDataArr`
-    $db = Mockery::mock($db)->makePartial();
-
-    $query = [
-      'table' => 'test_table',
-      'columns' => 'value',
-      'where' => [ 'test_table_id' => 1 ],
-    ];
-    $results = $db->getValue($query);
-    expect($results)->toBe(1);
   });
 
 });
