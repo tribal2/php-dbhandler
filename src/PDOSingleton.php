@@ -30,17 +30,7 @@ class PDOSingleton {
       return self::$instance;
     }
 
-    if (is_null(self::$dbConfig)) {
-      throw new Exception(static::class . ' is not configured. Call configure() method first.');
-    }
-
-    $cfg = self::$dbConfig;
-    $pdo = new PDO($cfg->getConnString(), $cfg->user, $cfg->password);
-
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
-
-    self::$instance = $pdo;
+    self::set();
 
     return self::$instance;
   }
@@ -53,6 +43,26 @@ class PDOSingleton {
 
   final public static function destroy(): void {
     self::$instance = NULL;
+  }
+
+
+  private static function set(?PDO $pdo = NULL): void {
+    self::$instance = $pdo ?? self::getDefaultPdo();
+  }
+
+
+  private static function getDefaultPdo(): PDO {
+    if (is_null(self::$dbConfig)) {
+      throw new Exception(static::class . ' is not configured. Call configure() method first.');
+    }
+
+    $cfg = self::$dbConfig;
+    $pdo = new PDO($cfg->getConnString(), $cfg->user, $cfg->password);
+
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+
+    return $pdo;
   }
 
 
