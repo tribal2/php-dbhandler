@@ -42,7 +42,7 @@
 				"php.validate.executablePath": "/usr/local/bin/php",
 				"php.suggest.basic": false,
 				"phpcs.executablePath": "/usr/local/bin/phpcs",
-				"phpcs.standard": "/dbhandler/ref/php_coding_standard.xml",
+				"phpcs.standard": "/dbhandler/php_coding_standard.xml",
 				"phpcs.showSources": true,
 				"php-docblocker.returnGap": true,
 				"peacock.affectStatusBar": false,
