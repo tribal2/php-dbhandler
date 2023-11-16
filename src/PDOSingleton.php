@@ -12,7 +12,6 @@ class PDOSingleton {
    * @var PDO
    */
   private static $instance;
-  private static PDOCommitModeEnum $commitMode = PDOCommitModeEnum::ON;
 
   private static ?DbConfig $dbConfig = NULL;
 
@@ -49,21 +48,6 @@ class PDOSingleton {
 
   final public static function getDbName(): string {
     return self::$dbConfig->dbName;
-  }
-
-
-  final public static function setCommitsModeOn(): void {
-    self::$commitMode = PDOCommitModeEnum::ON;
-  }
-
-
-  final public static function setCommitsModeOff(): void {
-    self::$commitMode = PDOCommitModeEnum::OFF;
-  }
-
-
-  final public static function getCommitsMode(): PDOCommitModeEnum {
-    return self::$commitMode;
   }
 
 

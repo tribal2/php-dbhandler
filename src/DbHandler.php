@@ -115,13 +115,13 @@ class DbHandler {
 
   final public function disableCommits() {
     self::$logger::log();
-    PDOSingleton::setCommitsModeOff();
+    DbTransaction::setCommitsModeOff();
   }
 
 
   final public function enableCommits() {
     self::$logger::log();
-    PDOSingleton::setCommitsModeOn();
+    DbTransaction::setCommitsModeOn();
   }
 
 
@@ -141,7 +141,7 @@ class DbHandler {
           self::$logger::log('>>> No hay ninguna transacción iniciada.');
           return NULL;
         }
-        if (PDOSingleton::getCommitsMode() === PDOCommitModeEnum::OFF) {
+        if (DbTransaction::getCommitsMode() === PDOCommitModeEnum::OFF) {
           self::$logger::log('>>> Los commits están desabilitados.');
           return NULL;
         }

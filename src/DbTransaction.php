@@ -9,6 +9,21 @@ class DbTransaction {
 
 
   public static bool $throw = FALSE;
+  private static PDOCommitModeEnum $commitMode = PDOCommitModeEnum::ON;
+
+  final public static function setCommitsModeOn(): void {
+    self::$commitMode = PDOCommitModeEnum::ON;
+  }
+
+
+  final public static function setCommitsModeOff(): void {
+    self::$commitMode = PDOCommitModeEnum::OFF;
+  }
+
+
+  final public static function getCommitsMode(): PDOCommitModeEnum {
+    return self::$commitMode;
+  }
 
 
   public static function begin(): bool {
@@ -29,7 +44,7 @@ class DbTransaction {
       return self::errorHandler('No hay ninguna transacción activa.');
     }
 
-    if (PDOSingleton::getCommitsMode() === PDOCommitModeEnum::OFF) {
+    if (self::getCommitsMode() === PDOCommitModeEnum::OFF) {
       return self::errorHandler('Los commits están desabilitados.');
     }
 

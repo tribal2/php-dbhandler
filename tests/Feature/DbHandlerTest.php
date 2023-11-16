@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\DbConfig;
 use Tribal2\DbHandler\DbHandler;
+use Tribal2\DbHandler\DbTransaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\PDOBindBuilder;
@@ -209,21 +210,21 @@ describe('DbHandler methods', function () {
   });
 
   test('disableCommits()', function () {
-    $prevStatus = PDOSingleton::getCommitsMode();
+    $prevStatus = DbTransaction::getCommitsMode();
     expect($prevStatus)->toBe(PDOCommitModeEnum::ON);
 
     $this->db->disableCommits();
-    $newStatus = PDOSingleton::getCommitsMode();
+    $newStatus = DbTransaction::getCommitsMode();
     expect($newStatus)->not()->toBe($prevStatus);
     expect($newStatus)->toBe(PDOCommitModeEnum::OFF);
   });
 
   test('enableCommits()', function () {
-    $prevStatus = PDOSingleton::getCommitsMode();
+    $prevStatus = DbTransaction::getCommitsMode();
     expect($prevStatus)->toBe(PDOCommitModeEnum::OFF);
 
     $this->db->enableCommits();
-    $newStatus = PDOSingleton::getCommitsMode();
+    $newStatus = DbTransaction::getCommitsMode();
     expect($newStatus)->not()->toBe($prevStatus);
     expect($newStatus)->toBe(PDOCommitModeEnum::ON);
   });
