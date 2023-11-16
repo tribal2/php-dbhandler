@@ -1106,7 +1106,6 @@ describe('DbHandler SELECT', function () {
   test('getDataRow() with warning', function () {
     /**
      * Simulamos una instancia de la clase Logger
-     * @var \Mockery\MockInterface $loggerMock
      */
     $loggerMock = Mockery::mock(Logger::class);
     $loggerMock->shouldReceive('log');

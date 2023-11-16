@@ -13,7 +13,7 @@ class Logger implements InterfacesLoggerInterface {
         . $title
         . ': '
         . json_encode($data)
-        . '<br>';
+        . '\n';
   }
 
 

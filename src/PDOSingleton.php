@@ -17,7 +17,7 @@ class PDOSingleton {
   private static ?DbConfig $dbConfig = NULL;
 
 
-  final static function configure(DbConfig $dbConfig): void {
+  final public static function configure(DbConfig $dbConfig): void {
     self::$dbConfig = $dbConfig;
   }
 

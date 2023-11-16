@@ -1476,7 +1476,7 @@ class DbHandler {
   /**
    * Método para manejar excepciones de la clase
    *
-   * @param PDOException $e
+   * @param Exception $e
    * @param string    $method
    * @param array     $arguments
    *
