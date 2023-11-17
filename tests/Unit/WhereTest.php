@@ -4,37 +4,46 @@ use Tribal2\DbHandler\Queries\Where;
 use Tribal2\DbHandler\PDOBindBuilder;
 
 describe('Utils', function () {
-  test('validateOperator() - with valid values', function() {
-    $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
+
+  $validateOperator = function ($operator) {
     $reflection = new ReflectionClass(Where::class);
     $method = $reflection->getMethod('validateOperator');
     $method->setAccessible(TRUE);
 
+    return $method->invoke(NULL, $operator);
+  };
+
+  test('validateOperator() - with valid values', function() use ($validateOperator) {
+    $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
+
     foreach ($validOperators as $operator) {
-        $result = $method->invoke($this->db, $operator);
+        $result = $validateOperator($operator);
         expect($result)->toBe($operator);
     }
   });
 
-  test('validateOperator() - with invalid value', function() {
-    $reflection = new ReflectionClass(Where::class);
-    $method = $reflection->getMethod('validateOperator');
-    $method->setAccessible(TRUE);
-
-    $invalidOperator = 'INVALID_OPERATOR';
-    $method->invoke($this->db, $invalidOperator);
+  test('validateOperator() - with invalid value', function() use ($validateOperator) {
+    $validateOperator('INVALID_OPERATOR');
   })->throws(Exception::class, "El operador 'INVALID_OPERATOR' no es válido.");
 
 });
 
 describe('Where::generateComplex()', function () {
 
-  test('generates simple OR clause', function() {
+  $generateComplex = function ($bindBuilder, $key, $valueArr) {
+    $reflection = new ReflectionClass(Where::class);
+    $method = $reflection->getMethod('generateComplex');
+    $method->setAccessible(TRUE);
+
+    return $method->invoke(NULL, $bindBuilder, $key, $valueArr, $method);
+  };
+
+  test('generates simple OR clause', function() use ($generateComplex) {
     $bindBuilder = new PDOBindBuilder();
     $key = 'column_name';
     $valueArr = ['value1', 'value2'];
 
-    $clause = Where::generateComplex($bindBuilder, $key, $valueArr);
+    $clause = $generateComplex($bindBuilder, $key, $valueArr);
 
     expect($clause)->toBe("(`column_name` LIKE :placeholder___1 OR `column_name` LIKE :placeholder___2)");
 
@@ -43,12 +52,12 @@ describe('Where::generateComplex()', function () {
     expect($binds[':placeholder___2']['value'])->toBe('value2');
   });
 
-  test('generates OR clause with NULL', function() {
+  test('generates OR clause with NULL', function() use ($generateComplex) {
       $bindBuilder = new PDOBindBuilder();
       $key = 'column_name';
       $valueArr = [NULL, 'value2'];
 
-      $clause = Where::generateComplex($bindBuilder, $key, $valueArr);
+      $clause = $generateComplex($bindBuilder, $key, $valueArr);
 
       expect($clause)->toBe("(`column_name` IS NULL OR `column_name` LIKE :placeholder___1)");
 
@@ -56,7 +65,7 @@ describe('Where::generateComplex()', function () {
       expect($binds[':placeholder___1']['value'])->toBe('value2');
   });
 
-  test('generates complex AND and OR clauses', function() {
+  test('generates complex AND and OR clauses', function() use ($generateComplex) {
       $bindBuilder = new PDOBindBuilder();
       $key = 'column_name';
       $valueArr = [
@@ -66,7 +75,7 @@ describe('Where::generateComplex()', function () {
           ['operator' => '=', 'value' => 4],
       ];
 
-      $clause = Where::generateComplex($bindBuilder, $key, $valueArr);
+      $clause = $generateComplex($bindBuilder, $key, $valueArr);
 
       $expected = ""
         . "(`column_name` = :placeholder___3 OR `column_name` = :placeholder___4) "
@@ -81,14 +90,14 @@ describe('Where::generateComplex()', function () {
       expect($binds[':placeholder___4']['value'])->toBe(4);
   });
 
-  test('throws an exception for invalid operator', function() {
+  test('throws an exception for invalid operator', function() use ($generateComplex) {
       $bindBuilder = new PDOBindBuilder();
       $key = 'column_name';
       $valueArr = [
           ['operator' => 'INVALID_OPERATOR', 'value' => 5]
       ];
 
-      Where::generateComplex($bindBuilder, $key, $valueArr);
+      $generateComplex($bindBuilder, $key, $valueArr);
   })->throws(Exception::class);
 
 });

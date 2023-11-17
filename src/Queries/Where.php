@@ -9,24 +9,6 @@ class Where {
 
 
   /**
-   * Validate an operator
-   * @param string $operator Operator to validate
-   *
-   * @return string Valid operator
-   * @throws \Exception If operator is not valid
-   */
-  private static function validateOperator($operator) {
-    $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
-    if (!in_array($operator, $validOperators)) {
-      $msg = "El operador '{$operator}' no es válido.";
-      throw new \Exception($msg, 400);
-    }
-
-    return $operator;
-  }
-
-
-  /**
    * Generate a SQL 'where' clause from an array of conditions
    * @param PDOBindBuilder $bindBuilder Instance of PDOBindBuilder
    * @param array          $where       Array of conditions
@@ -67,7 +49,16 @@ class Where {
   }
 
 
-  public static function generateComplex(
+  /**
+   * Generate a complex SQL 'where' for a single column
+   *
+   * @param PDOBindBuilder $bindBuilder Instance of PDOBindBuilder
+   * @param string         $key         Name of the column
+   * @param array          $valueArr    Array of conditions
+   *
+   * @return string SQL 'where' clause
+   */
+  private static function generateComplex(
     PDOBindBuilder $bindBuilder,
     string $key,
     array $valueArr,
@@ -120,6 +111,24 @@ class Where {
     }
 
     return implode(' AND ', $whereArr);
+  }
+
+
+  /**
+   * Validate an operator
+   * @param string $operator Operator to validate
+   *
+   * @return string Valid operator
+   * @throws \Exception If operator is not valid
+   */
+  private static function validateOperator($operator) {
+    $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
+    if (!in_array($operator, $validOperators)) {
+      $msg = "El operador '{$operator}' no es válido.";
+      throw new \Exception($msg, 400);
+    }
+
+    return $operator;
   }
 
 
