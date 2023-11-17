@@ -27,11 +27,7 @@ describe('begin()', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
     $pdoMock->shouldReceive('beginTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::begin())->toBeTrue();
   });
@@ -39,11 +35,7 @@ describe('begin()', function () {
   test('with an active transaction', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::begin())->toBeFalse();
   });
@@ -56,11 +48,7 @@ describe('commit()', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     $pdoMock->shouldReceive('commit')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::commit())->toBeTrue();
   });
@@ -68,11 +56,7 @@ describe('commit()', function () {
   test('with commits mode off', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::setCommitsModeOff();
 
@@ -87,11 +71,7 @@ describe('rollback()', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     $pdoMock->shouldReceive('rollBack')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::begin();
     expect(DbTransaction::rollback())->toBeTrue();
@@ -100,11 +80,7 @@ describe('rollback()', function () {
   test('with no active transaction', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::rollback())->toBeFalse();
   });
@@ -116,11 +92,7 @@ describe('check()', function () {
   test('returns true when a transaction is active', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::check())->toBeTrue();
   });
@@ -128,11 +100,7 @@ describe('check()', function () {
   test('returns false when no transaction is active', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     expect(DbTransaction::check())->toBeFalse();
   });
@@ -149,11 +117,7 @@ describe('error handling with $throw flag enabled', function () {
   test('begin() with an active transaction already started', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::begin();
   })->throws(Exception::class);
@@ -161,11 +125,7 @@ describe('error handling with $throw flag enabled', function () {
   test('commit() with no active transaction started', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::commit();
   })->throws(Exception::class);
@@ -173,11 +133,7 @@ describe('error handling with $throw flag enabled', function () {
   test('commit() with commitMode = OFF', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::setCommitsModeOff();
 
@@ -187,11 +143,7 @@ describe('error handling with $throw flag enabled', function () {
   test('rollback() with no active transaction started', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-
-    $reflection = new ReflectionClass(PDOSingleton::class);
-    $method = $reflection->getMethod('set');
-    $method->setAccessible(TRUE);
-    $method->invokeArgs(NULL, [$pdoMock]);
+    PDOSingleton::set($pdoMock);
 
     DbTransaction::rollback();
   })->throws(Exception::class);

@@ -46,7 +46,7 @@ class PDOSingleton {
   }
 
 
-  private static function set(?PDO $pdo = NULL): void {
+  public static function set(?PDO $pdo = NULL): void {
     self::$instance = $pdo ?? self::getDefaultPdo();
   }
 
