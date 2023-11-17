@@ -371,7 +371,7 @@ class DbHandler {
       }
 
       // Configuramos las columnas a obtener
-      $cols = $this->parseColumns($columns);
+      $cols = Common::parseColumns($columns);
 
       // Configuramos las cláusulas
       if (is_array($where)) {
@@ -1440,31 +1440,6 @@ class DbHandler {
     }
 
     throw new Exception($defaultErrMsg, 500, $e);
-  }
-
-
-  /**
-   * @param string|string[] $cols
-   *
-   * @return string
-   */
-  private function parseColumns($cols): string {
-    try {
-      $_cols = is_string($cols)
-        ? explode(',', $cols)
-        : $cols;
-
-      $colsArr = [];
-      foreach($_cols as $col) {
-        $colsArr[] = Common::quoteWrap(trim($col));
-      }
-
-      return implode(', ', $colsArr);
-    }
-
-    catch(Exception $e) {
-      return $this->handleException($e, __FUNCTION__, func_get_args());
-    }
   }
 
 

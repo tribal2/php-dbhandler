@@ -126,61 +126,6 @@ describe('DbHandler config', function () {
   });
 });
 
-describe('DbHandler utilz', function () {
-  beforeEach(function () {
-    $this->db = DbHandler::getInstance();
-  });
-
-  test('parseColumns returns single quoted column name when passed a string', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('parseColumns');
-    $method->setAccessible(TRUE);
-
-    $column = 'username';
-    $expected = '`username`';
-    $result = $method->invoke($this->db, $column);
-
-    expect($result)->toBe($expected);
-  });
-
-  test('parseColumns returns multiple quoted column name when passed a string of comma separated columns', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('parseColumns');
-    $method->setAccessible(TRUE);
-
-    $column = 'username, password';
-    $expected = '`username`, `password`';
-    $result = $method->invoke($this->db, $column);
-
-    expect($result)->toBe($expected);
-  });
-
-  test('parseColumns returns comma-separated quoted column names when passed an array', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('parseColumns');
-    $method->setAccessible(TRUE);
-
-    $columns = ['username', 'email'];
-    $expected = '`username`, `email`';
-    $result = $method->invoke($this->db, $columns);
-
-    expect($result)->toBe($expected);
-  });
-
-  test('parseColumns does not quote function calls', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('parseColumns');
-    $method->setAccessible(TRUE);
-
-    $columns = ['COUNT(*)', 'username'];
-    $expected = 'COUNT(*), `username`';
-    $result = $method->invoke($this->db, $columns);
-
-    expect($result)->toBe($expected);
-  });
-
-});
-
 describe('DbHandler methods', function () {
   beforeEach(function () {
     $this->db = DbHandler::getInstance();
