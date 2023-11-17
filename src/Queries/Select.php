@@ -1,10 +1,159 @@
 <?php
 
+namespace Tribal2\DbHandler\Queries;
+
+use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
 class Select {
+
+  private PDOBindBuilder $bindBuilder;
+
+  private string $table;
+
+  /**
+   * Columns to select
+   *
+   * @var string[]
+   */
+  private array $columns = [];
+
+  private array $where = [];
+
+  private array $groupBy = [];
+
+  private array $having = [];
+
+  private array $orderBy = [];
+
+  private string $limit = '';
+  private string $offset = '';
+
+
+  public function __construct(string $table) {
+    $this->table = Common::quoteWrap($table);
+    $this->bindBuilder = new PDOBindBuilder();
+  }
+
+
+  public function column(string $column): self {
+    $this->columns[] = $column;
+    return $this;
+  }
+
+
+  public function columns(array $columns): self {
+    foreach ($columns as $column) {
+      if (!is_string($column)) {
+        throw new \Exception('Each element of $columns must be a string');
+      }
+
+      $this->columns[] = $column;
+    }
+    return $this;
+  }
+
+
+  public function where($where = ''): self {
+    $this->where = $where;
+    return $this;
+  }
+
+
+  public function groupBy(string $groupBy): self {
+    $this->groupBy[] = $groupBy;
+    return $this;
+  }
+
+
+  public function having(array $having): self {
+    if (count($this->groupBy) === 0) {
+      throw new \Exception('HAVING clause requires GROUP BY clause');
+    }
+
+    $this->having[] = $having;
+    return $this;
+  }
+
+
+  public function limit(int $limit): self {
+    $limitPlaceHolder = $this->bindBuilder->addValueWithPrefix(
+      $limit,
+      'limit',
+      \PDO::PARAM_INT
+    );
+
+    $this->limit = "LIMIT {$limitPlaceHolder}";
+    return $this;
+  }
+
+
+  public function offset(int $offset): self {
+    $offsetPlaceHolder = $this->bindBuilder->addValueWithPrefix(
+      $offset,
+      'offset',
+      \PDO::PARAM_INT
+    );
+
+    $this->offset = "OFFSET {$offsetPlaceHolder}";
+    return $this;
+  }
+
+
+  public function orderBy(
+    string $column,
+    OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
+  ): self {
+    $this->orderBy[] = "{$column} {$direction}";
+    return $this;
+  }
+
+
+  public function execute(\PDO $pdo, $options): array {
+    $query = $this->getSql();
+    $pdoStatement = $pdo->prepare($query);
+
+    // Bind values
+    $this->bindBuilder->bindToStatement($pdoStatement);
+
+    // Execute query
+    $pdoStatement->execute();
+
+    // Return results
+    return $pdoStatement->fetchAll($options);
+  }
+
+
+  public function getSql(): string {
+    $queryParts = [
+      // SELECT
+      'SELECT',
+      empty($this->columns) ? '*' : Common::parseColumns($this->columns),
+      // FROM
+      "FROM {$this->table}",
+      // WHERE
+      empty($this->where)
+        ? ''
+        : 'WHERE ' . Where::generate($this->bindBuilder, $this->where),
+      // GROUP BY
+      empty($this->groupBy) ? '' : 'GROUP BY ' . implode(', ', $this->groupBy),
+      // HAVING
+      empty($this->having)
+        ? ''
+        : 'HAVING ' . Where::generate($this->bindBuilder, $this->having),
+      // ORDER BY
+      empty($this->orderBy) ? '' : 'ORDER BY ' . implode(', ', $this->orderBy),
+      // LIMIT
+      $this->limit,
+      // OFFSET
+      $this->offset,
+    ];
+
+    return implode(' ', array_filter($queryParts)) . ';';
+  }
+
 
   /**
    * Generate a SELECT query
@@ -69,7 +218,7 @@ class Select {
     $limit = $queryArr['limit'] ?? 0;
     $_limit = ($limit === 0)
       ? ''
-      : 'LIMIT ' . $bindBuilder->addValue($limit, PDO::PARAM_INT);
+      : 'LIMIT ' . $bindBuilder->addValue($limit, \PDO::PARAM_INT);
 
     // Configuramos el final del query
     $queryEndArr = [];
