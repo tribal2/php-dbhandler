@@ -12,6 +12,7 @@ use Tribal2\DbHandler\Helpers\Common;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
+use Tribal2\DbHandler\Queries\Where;
 
 class DbHandler {
 
@@ -374,7 +375,7 @@ class DbHandler {
 
       // Configuramos las cláusulas
       if (is_array($where)) {
-        $where = $this->generateWhere($bindBuilder, $where);
+        $where = Where::generate($bindBuilder, $where);
       }
       $_where = ($where !== '') ? "WHERE $where" : '';
 
@@ -386,7 +387,7 @@ class DbHandler {
 
       // Configuramos el having
       if (is_array($having)) {
-        $having = $this->generateWhere($bindBuilder, $having);
+        $having = Where::generate($bindBuilder, $having);
       }
       $_having = ($_group_by !== '' && $having !== '')
         ? "HAVING $having"
@@ -702,7 +703,7 @@ class DbHandler {
 
       // Ajustamos cláusula WHERE
       $bindBuilder = new PDOBindBuilder();
-      $_where = $this->generateWhere($bindBuilder, $where);
+      $_where = Where::generate($bindBuilder, $where);
       $queryEnd = empty($_where) ? '' : " WHERE {$_where}";
 
       // Creamos la consulta y la ejecutamos
@@ -1368,113 +1369,6 @@ class DbHandler {
 
 
   /**
-   * Generar un string WHERE para una consulta SQL a partir de un array
-   * @param PDOBindBuilder $bindBuilder Objeto para generar los binds de PDO
-   * @param array          $where       Array con los parámetros de la consulta
-   *
-   * @return string String con la condición WHERE para la consulta
-   */
-  public function generateWhere(
-    PDOBindBuilder $bindBuilder,
-    array $where,
-  ): string {
-    try {
-      self::$logger::log();
-
-      $whereArr = [];
-      foreach($where as $key => $val) {
-        $_key = Common::quoteWrap($key);
-
-        // Varias opciones para un sólo campo ==> OR
-        if (is_array($val) && !array_key_exists('operator', $val)) {
-          $whereArr[] = $this->generateWhereComplex($bindBuilder, $key, $val);
-          continue;
-        }
-
-        // Única opción con operador
-        if (is_array($val)) {
-          $operator = $this->validateOperator($val['operator']);
-          $value = is_null($val['value'])
-            ? 'NULL'
-            : $bindBuilder->addValue($val['value']);
-          $whereArr[] = "{$_key} {$operator} {$value}";
-          continue;
-        }
-
-        // Única opción simple
-        $whereArr[] = is_null($val)
-          ? "{$_key} IS NULL"
-          : "{$_key} LIKE " . $bindBuilder->addValue($val);
-      }
-
-      return implode(' AND ', $whereArr);
-    }
-
-    catch(Exception $e) {
-      return $this->handleException($e, __FUNCTION__, func_get_args());
-    }
-  }
-
-
-  public function generateWhereComplex(
-    PDOBindBuilder $bindBuilder,
-    string $key,
-    array $valueArr,
-  ): string {
-    self::$logger::log();
-
-    $_key = Common::quoteWrap($key);
-
-    $whereArr = [];
-
-    $orClause = [];
-    $andClause = [];
-
-    foreach($valueArr as $valValue) {
-      // Si el elemento no es otro array..
-      if (!is_array($valValue)) {
-        $orClause[] = is_null($valValue)
-          ? "{$_key} IS NULL"
-          : "{$_key} LIKE " . $bindBuilder->addValue($valValue);
-
-        continue;
-      }
-
-      // ..si es otro array
-      $operator = $this->validateOperator($valValue['operator']);
-      $value = $valValue['value'];
-
-      if (!is_null($value)) {
-        $placeholderValue = $bindBuilder->addValue($value);
-        $clause = "{$_key} {$operator} {$placeholderValue}";
-        // Si se provee la propiedad 'and', se hará un query así:
-        // (valor > 3 AND valor < 10)
-        if (isset($valValue['and']) && $valValue['and']) {
-          $andClause[] = $clause;
-        }
-        // Si NO se provee la propiedad 'and':
-        // (valor > 3 OR valor < 10)
-        else {
-          $orClause[] = $clause;
-        }
-      }
-    }
-
-    if (count($orClause) > 0) {
-      $orClauseStr = implode(' OR ', $orClause);
-      $whereArr[] = "({$orClauseStr})";
-    }
-
-    if (count($andClause) > 0) {
-      $andClauseStr = implode(' AND ', $andClause);
-      $whereArr[] = "({$andClauseStr})";
-    }
-
-    return implode(' AND ', $whereArr);
-  }
-
-
-  /**
    * Método para manejar excepciones de la clase
    *
    * @param Exception $e
@@ -1546,23 +1440,6 @@ class DbHandler {
     }
 
     throw new Exception($defaultErrMsg, 500, $e);
-  }
-
-
-  private function validateOperator($operator) {
-    try {
-      $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
-      if (!in_array($operator, $validOperators)) {
-        $msg = "El operador '{$operator}' no es válido.";
-        throw new Exception($msg, 400);
-      }
-
-      return $operator;
-    }
-
-    catch(Exception $e) {
-      return $this->handleException($e, __FUNCTION__, func_get_args());
-    }
   }
 
 
