@@ -8,10 +8,10 @@ use PDOException;
 use stdClass;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
-use Tribal2\DbHandler\Helpers\Common;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
+use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
 class DbHandler {

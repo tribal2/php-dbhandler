@@ -2,7 +2,6 @@
 
 namespace Tribal2\DbHandler\Queries;
 
-use Tribal2\DbHandler\Helpers\Common;
 use Tribal2\DbHandler\PDOBindBuilder;
 
 class Where {

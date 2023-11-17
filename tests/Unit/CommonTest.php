@@ -1,6 +1,6 @@
 <?php
 
-use Tribal2\DbHandler\Helpers\Common;
+use Tribal2\DbHandler\Queries\Common;
 
 describe('Common', function () {
 

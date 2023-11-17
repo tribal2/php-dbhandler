@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribal2\DbHandler\Helpers;
+namespace Tribal2\DbHandler\Queries;
 
 class Common {
 
