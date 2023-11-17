@@ -8,6 +8,7 @@ use PDOException;
 use stdClass;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
+use Tribal2\DbHandler\Helpers\Common;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
@@ -1382,7 +1383,7 @@ class DbHandler {
 
       $whereArr = [];
       foreach($where as $key => $val) {
-        $_key = $this->quoteWrap($key);
+        $_key = Common::quoteWrap($key);
 
         // Varias opciones para un sólo campo ==> OR
         if (is_array($val) && !array_key_exists('operator', $val)) {
@@ -1422,7 +1423,7 @@ class DbHandler {
   ): string {
     self::$logger::log();
 
-    $_key = $this->quoteWrap($key);
+    $_key = Common::quoteWrap($key);
 
     $whereArr = [];
 
@@ -1578,26 +1579,10 @@ class DbHandler {
 
       $colsArr = [];
       foreach($_cols as $col) {
-        $colsArr[] = $this->quoteWrap(trim($col));
+        $colsArr[] = Common::quoteWrap(trim($col));
       }
 
       return implode(', ', $colsArr);
-    }
-
-    catch(Exception $e) {
-      return $this->handleException($e, __FUNCTION__, func_get_args());
-    }
-  }
-
-
-  private function quoteWrap(string $column): string {
-    try {
-      // If column is * or a function, don't quote it
-      if (preg_match('/\w+\(.*\)|\*/', $column)) {
-        return $column;
-      }
-
-      return "`{$column}`";
     }
 
     catch(Exception $e) {

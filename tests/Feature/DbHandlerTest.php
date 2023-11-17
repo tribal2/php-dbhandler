@@ -131,29 +131,6 @@ describe('DbHandler utilz', function () {
     $this->db = DbHandler::getInstance();
   });
 
-  test('quoteWrap wraps non-function column names with backticks', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('quoteWrap');
-    $method->setAccessible(TRUE);
-
-    $columnName = 'column_name';
-    $expected = '`column_name`';
-    $result = $method->invoke($this->db, $columnName);
-
-    expect($result)->toBe($expected);
-  });
-
-  test('quoteWrap does not wrap function-like column names with backticks', function () {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('quoteWrap');
-    $method->setAccessible(TRUE);
-
-    $columnName = 'COUNT(*)';
-    $result = $method->invoke($this->db, $columnName);
-
-    expect($result)->toBe($columnName);
-  });
-
   test('parseColumns returns single quoted column name when passed a string', function () {
     $reflection = new ReflectionClass(DbHandler::class);
     $method = $reflection->getMethod('parseColumns');
