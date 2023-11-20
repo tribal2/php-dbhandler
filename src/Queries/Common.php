@@ -2,6 +2,7 @@
 
 namespace Tribal2\DbHandler\Queries;
 
+use PDO;
 use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
 
 class Common {
@@ -51,13 +52,13 @@ class Common {
    *
    * @throws \Exception
    *
-   * @return void
+   * @return ?int
    */
   public static function checkValue(
     $value,
     ?string $column = NULL,
     array $expectedType = [],
-  ): void {
+  ): ?int {
 
     if (empty($expectedType)) {
       $expectedType = [
@@ -72,17 +73,14 @@ class Common {
     $eTypeStr = [];
 
     foreach ($expectedType as $type) {
-      if ($type === SqlValueTypeEnum::STRING) {
-        if (is_string($value)) return;
-        $eTypeStr[] = 'string';
-        continue;
-      }
-
       if (
         $type === SqlValueTypeEnum::INTEGER
         || $type === SqlValueTypeEnum::FLOAT
       ) {
-        if (is_numeric($value)) return;
+        if (is_numeric($value))
+          return is_int($value + 0)
+            ? PDO::PARAM_INT
+            : NULL;
 
         if (array_search('number', $eTypeStr) !== FALSE) continue;
         $eTypeStr[] = 'number';
@@ -90,14 +88,23 @@ class Common {
       }
 
       if ($type === SqlValueTypeEnum::NULL) {
-        if (is_null($value)) return;
+        if (is_null($value)) return PDO::PARAM_NULL;
+
         $eTypeStr[] = 'NULL';
         continue;
       }
 
       if ($type === SqlValueTypeEnum::BOOLEAN) {
-        if (is_bool($value)) return;
+        if (is_bool($value)) return PDO::PARAM_BOOL;
+
         $eTypeStr[] = 'boolean';
+        continue;
+      }
+
+      if ($type === SqlValueTypeEnum::STRING) {
+        if (is_string($value)) return PDO::PARAM_STR;
+
+        $eTypeStr[] = 'string';
         continue;
       }
     }

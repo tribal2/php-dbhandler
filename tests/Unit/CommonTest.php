@@ -62,6 +62,38 @@ describe('parseColumns()', function () {
 
 describe('checkValue()', function () {
 
+  test('should return PDO::PARAM_INT when a integer or numeric integer is provided', function() {
+    $res = Common::checkValue('12345', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+    expect($res)->toBe(PDO::PARAM_INT);
+
+    $res2 = Common::checkValue(12345);
+    expect($res2)->toBe(PDO::PARAM_INT);
+  });
+
+  test('should return NULL when a float or numeric float is provided', function() {
+    $res = Common::checkValue('123.45', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+    expect($res)->toBeNull();
+
+    $res = Common::checkValue(123.45);
+    expect($res)->toBeNull();
+  });
+
+  test('should return PDO::PARAM_BOOL when a boolean is provided', function() {
+    $res = Common::checkValue(TRUE, 'column_name', [ SqlValueTypeEnum::BOOLEAN ]);
+    expect($res)->toBe(PDO::PARAM_BOOL);
+
+    $res = Common::checkValue(FALSE);
+    expect($res)->toBe(PDO::PARAM_BOOL);
+  });
+
+  test('should return PDO::STR when a non-numerique string is provided', function() {
+    $res = Common::checkValue('TRUE', 'column_name', [ SqlValueTypeEnum::STRING ]);
+    expect($res)->toBe(PDO::PARAM_STR);
+
+    $res = Common::checkValue('I am a string');
+    expect($res)->toBe(PDO::PARAM_STR);
+  });
+
   test('does not throw an exception when setting a string value', function() {
     Common::checkValue('some_value', 'column_name');
   })->throwsNoExceptions();
