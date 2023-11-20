@@ -41,4 +41,30 @@ class Common {
   }
 
 
+  /**
+   * Parse values to be used in a query
+   * @param mixed   $value
+   * @param ?string $column
+   *
+   * @return void
+   */
+  public static function checkValue($value, ?string $column = NULL): void {
+    if (
+      is_string($value)
+      || is_numeric($value)
+      || is_null($value)
+      || is_bool($value)
+    ) {
+      return;
+    }
+
+    $valType = gettype($value);
+    $forColumn = isset($column) ? " for '{$column}'" : '';
+    $e = "The value to write in the database must be string, number, NULL or "
+      . "boolean. The value entered{$forColumn} is of type '{$valType}'.";
+
+    throw new \Exception($e, 500);
+  }
+
+
 }

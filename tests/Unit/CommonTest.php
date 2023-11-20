@@ -58,3 +58,25 @@ describe('parseColumns()', function () {
   });
 
 });
+
+describe('checkValue()', function () {
+
+  test('does not throw an exception when setting a string value', function() {
+    Common::checkValue('some_value', 'column_name');
+  })->throwsNoExceptions();
+
+  test('does not throw an exception when setting a numeric value', function() {
+    Common::checkValue(123, 'column_name');
+  })->throwsNoExceptions();
+
+  test('throws an exception when trying to set an array value', function() {
+    Common::checkValue(['some', 'value']);
+
+  })->throws(Exception::class, NULL, 500);
+
+  test('throws an exception when trying to set an object value', function() {
+    $obj = new stdClass();
+    Common::checkValue($obj);
+
+  })->throws(Exception::class, NULL, 500);
+});

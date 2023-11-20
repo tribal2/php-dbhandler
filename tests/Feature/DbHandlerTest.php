@@ -187,41 +187,6 @@ describe('DbHandler methods', function () {
     $this->db->getRowCount('nonexistent_table');
   })->throws(Exception::class);
 
-  test('checkValue() - does not throw an exception when setting a string value', function() {
-      $reflection = new ReflectionClass(DbHandler::class);
-      $method = $reflection->getMethod('checkValue');
-      $method->setAccessible(TRUE);
-
-      $method->invokeArgs($this->db, ['some_value', 'column_name']);
-  })->throwsNoExceptions();
-
-  test('checkValue() - does not throw an exception when setting a numeric value', function() {
-      $reflection = new ReflectionClass(DbHandler::class);
-      $method = $reflection->getMethod('checkValue');
-      $method->setAccessible(TRUE);
-
-      $method->invokeArgs($this->db, [123, 'column_name']);
-  })->throwsNoExceptions();
-
-  test('checkValue() - throws an exception when trying to set an array value', function() {
-    $reflection = new ReflectionClass(DbHandler::class);
-    $method = $reflection->getMethod('checkValue');
-    $method->setAccessible(TRUE);
-
-    $method->invokeArgs($this->db, [['some', 'value']]);
-
-  })->throws(Exception::class, NULL, 500);
-
-  test('checkValue() - throws an exception when trying to set an object value', function() {
-      $reflection = new ReflectionClass(DbHandler::class);
-      $method = $reflection->getMethod('checkValue');
-      $method->setAccessible(TRUE);
-
-      $obj = new stdClass();
-      $method->invokeArgs($this->db, [$obj]);
-
-  })->throws(Exception::class, NULL, 500);
-
 });
 
 describe('DbHandler getSchemaInfo()', function () {

@@ -892,7 +892,7 @@ class DbHandler {
       foreach ($dataCols as $col) {
         if (!isset($data[$col])) continue;
 
-        $this->checkValue($data[$col], $col);
+        Common::checkValue($data[$col], $col);
         $queryColumns[] = "`$col`";
         $queryParams[] = $bindBuilder->addValueWithPrefix($data[$col], $col);
       }
@@ -977,7 +977,7 @@ class DbHandler {
         $queryRowArr = [];
 
         foreach ($row as $_col => $_val) {
-          $this->checkValue($_val, $_col);
+          Common::checkValue($_val, $_col);
           $queryRowArr[] = $bindBuilder->addValueWithPrefix($_val, $_col);
         }
 
@@ -1090,7 +1090,7 @@ class DbHandler {
             && array_key_exists($col, $data)
           )
         ) {
-          $this->checkValue($data[$col], $col);
+          Common::checkValue($data[$col], $col);
           $placeholder = $bindBuilder->addValueWithPrefix($data[$col], $col);
           $updateQuerySet[] = "`{$col}` = {$placeholder}";
           continue;
@@ -1331,30 +1331,6 @@ class DbHandler {
     self::$logger::log(">>> {$lastInsertId}");
 
     return $lastInsertId;
-  }
-
-
-  private function checkValue($value, $column = NULL) {
-    self::$logger::log();
-
-    // Verificamos tipos permitidos
-    if (
-      is_string($value)
-      || is_numeric($value)
-      || is_null($value)
-      || is_bool($value)
-    ) {
-      return;
-    }
-
-    $valType = gettype($value);
-    $e = 'El valor a escribir en la base de datos debe ser una cadena '
-          . 'de caracteres o un número. El valor ingresado ';
-    $e .= isset($column)
-      ? "para '{$column}' "
-      : '';
-    $e .= "es de tipo '{$valType}'.";
-    throw new Exception($e, 500);
   }
 
 
