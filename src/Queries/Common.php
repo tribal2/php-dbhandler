@@ -2,6 +2,8 @@
 
 namespace Tribal2\DbHandler\Queries;
 
+use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
+
 class Common {
 
 
@@ -43,25 +45,69 @@ class Common {
 
   /**
    * Parse values to be used in a query
-   * @param mixed   $value
-   * @param ?string $column
+   * @param mixed              $value        The value to parse
+   * @param ?string            $column       The column name
+   * @param SqlValueTypeEnum[] $expectedType The expected type of the value. Default: []
+   *
+   * @throws \Exception
    *
    * @return void
    */
-  public static function checkValue($value, ?string $column = NULL): void {
-    if (
-      is_string($value)
-      || is_numeric($value)
-      || is_null($value)
-      || is_bool($value)
-    ) {
-      return;
+  public static function checkValue(
+    $value,
+    ?string $column = NULL,
+    array $expectedType = [],
+  ): void {
+
+    if (empty($expectedType)) {
+      $expectedType = [
+        SqlValueTypeEnum::STRING,
+        SqlValueTypeEnum::INTEGER,
+        SqlValueTypeEnum::FLOAT,
+        SqlValueTypeEnum::NULL,
+        SqlValueTypeEnum::BOOLEAN,
+      ];
+    }
+
+    $eTypeStr = [];
+
+    foreach ($expectedType as $type) {
+      if ($type === SqlValueTypeEnum::STRING) {
+        if (is_string($value)) return;
+        $eTypeStr[] = 'string';
+        continue;
+      }
+
+      if (
+        $type === SqlValueTypeEnum::INTEGER
+        || $type === SqlValueTypeEnum::FLOAT
+      ) {
+        if (is_numeric($value)) return;
+
+        if (array_search('number', $eTypeStr) !== FALSE) continue;
+        $eTypeStr[] = 'number';
+        continue;
+      }
+
+      if ($type === SqlValueTypeEnum::NULL) {
+        if (is_null($value)) return;
+        $eTypeStr[] = 'NULL';
+        continue;
+      }
+
+      if ($type === SqlValueTypeEnum::BOOLEAN) {
+        if (is_bool($value)) return;
+        $eTypeStr[] = 'boolean';
+        continue;
+      }
     }
 
     $valType = gettype($value);
+    $eType = implode(' or ', $eTypeStr);
     $forColumn = isset($column) ? " for '{$column}'" : '';
-    $e = "The value to write in the database must be string, number, NULL or "
-      . "boolean. The value entered{$forColumn} is of type '{$valType}'.";
+
+    $e = "The value to write in the database must be {$eType}. The value "
+      . "entered{$forColumn} is of type '{$valType}'.";
 
     throw new \Exception($e, 500);
   }

@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
 use Tribal2\DbHandler\Queries\Common;
 
 describe('quoteWrap()', function () {
@@ -79,4 +80,12 @@ describe('checkValue()', function () {
     Common::checkValue($obj);
 
   })->throws(Exception::class, NULL, 500);
+
+  test('throws an exception when trying to set a string and a numeric value is expected', function() {
+    Common::checkValue('not_a_number', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+  })->throws(
+    Exception::class,
+    "The value to write in the database must be number. The value entered for 'column_name' is of type 'string'.",
+    500
+  );
 });
