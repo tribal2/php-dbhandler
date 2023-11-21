@@ -57,6 +57,108 @@ describe('WhereClause - getSqlForArrayOfValues()', function () {
 });
 
 
+describe('WhereClause - getSqlForArrayOfWhereClauses()', function () {
+
+  beforeEach(function() {
+    $this->bindBuilder = new PDOBindBuilder();
+  });
+
+  test('AND and getSql', function () {
+    $clauseAnd = WhereClause::and(
+      WhereClause::equals('column1', 'value1'),
+      WhereClause::greaterThan('column2', 1),
+      WhereClause::lessThanOrEquals('column3', 2),
+    );
+
+    $expectedSql = ""
+      . "("
+      .   "`column1` = :column1___1"
+      .   " AND "
+      .   "`column2` > :column2___1"
+      .   " AND "
+      .   "`column3` <= :column3___1"
+      . ")";
+
+    expect($clauseAnd->getSql($this->bindBuilder))->toEqual($expectedSql);
+  });
+
+  test('OR and getSqlForArrayOfValues', function () {
+    $clauseOr = WhereClause::or(
+      WhereClause::in('column', ['value1', 'value2']),
+      WhereClause::notIn('column', ['value3', 'value4']),
+    );
+
+    $expectedSql = ""
+      . "("
+      .   "`column` IN (:column___1, :column___2)"
+      .   " OR "
+      .   "`column` NOT IN (:column___3, :column___4)"
+      . ")";
+    expect($clauseOr->getSql($this->bindBuilder))->toEqual($expectedSql);
+  });
+
+  test('mix of AND / OR', function () {
+    $clauseOr = WhereClause::or(
+      WhereClause::and(
+        WhereClause::greaterThan('column1', 1),
+        WhereClause::lessThanOrEquals('column1', 5),
+      ),
+      WhereClause::and(
+        WhereClause::greaterThan('column2', 1),
+        WhereClause::lessThanOrEquals('column2', 5),
+      ),
+    );
+
+    $expectedSql = ""
+      . "("
+      .   "("
+      .     "`column1` > :column1___1"
+      .     " AND "
+      .     "`column1` <= :column1___2"
+      .   ")"
+      .   " OR "
+      .   "("
+      .     "`column2` > :column2___1"
+      .     " AND "
+      .     "`column2` <= :column2___2"
+      .   ")"
+      . ")";
+    expect($clauseOr->getSql($this->bindBuilder))->toEqual($expectedSql);
+  });
+
+  test('nested ANDs', function () {
+    $clauseAnd = WhereClause::and(
+      WhereClause::equals('column1', 'value1'),
+      WhereClause::and(
+        WhereClause::greaterThan('column2', 1),
+        WhereClause::and(
+          WhereClause::lessThanOrEquals('column3', 2),
+          WhereClause::equals('column4', 'value4'),
+        ),
+      ),
+    );
+
+    $expectedSql = ""
+      . "("
+      .   "`column1` = :column1___1"
+      .   " AND "
+      .   "("
+      .     "`column2` > :column2___1"
+      .     " AND "
+      .     "("
+      .       "`column3` <= :column3___1"
+      .       " AND "
+      .       "`column4` = :column4___1"
+      .     ")"
+      .   ")"
+      . ")";
+
+    expect($clauseAnd->getSql($this->bindBuilder))->toEqual($expectedSql);
+  });
+
+});
+
+
 describe('WhereClause - verify sql after binding values', function () {
 
   beforeEach(function() {

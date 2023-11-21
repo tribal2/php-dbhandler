@@ -34,6 +34,9 @@ class WhereClause {
 
 
   private function getSqlForArrayOfValues(PDOBindBuilder $bindBuilder): string {
+    if ($this->key === '' && isset($this->value['whereClauses']))
+      return $this->getSqlForArrayOfWhereClauses($bindBuilder);
+
     $column = Common::quoteWrap($this->key);
 
     $valuePlaceholders = [];
@@ -54,6 +57,43 @@ class WhereClause {
       case 'NOT BETWEEN':
         return "{$column} {$this->operator} {$valuePlaceholders[0]} AND {$valuePlaceholders[1]}";
     }
+  }
+
+
+  private function getSqlForArrayOfWhereClauses(PDOBindBuilder $bindBuilder): string {
+    $whereClauses = $this->value['whereClauses'];
+
+    $sqlArr = [];
+    foreach ($whereClauses as $whereClause) {
+      $subClauseSql = $whereClause->getSql($bindBuilder);
+      $sqlArr[] = "{$subClauseSql}";
+    }
+
+    $sql = implode(" {$this->operator} ", $sqlArr);
+
+    return "({$sql})";
+  }
+
+
+  public static function or(WhereClause ...$whereClauses): WhereClause {
+    return new WhereClause(
+      '',
+      [
+        'whereClauses' => $whereClauses,
+      ],
+      'OR',
+    );
+  }
+
+
+  public static function and(WhereClause ...$whereClauses): WhereClause {
+    return new WhereClause(
+      '',
+      [
+        'whereClauses' => $whereClauses,
+      ],
+      'AND',
+    );
   }
 
 
