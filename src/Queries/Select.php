@@ -20,7 +20,7 @@ class Select {
    */
   private array $columns = [];
 
-  private array $where = [];
+  private ?Where $where = NULL;
 
   private array $groupBy = [];
 
@@ -56,7 +56,7 @@ class Select {
   }
 
 
-  public function where($where = ''): self {
+  public function where(Where $where): self {
     $this->where = $where;
     return $this;
   }
@@ -134,9 +134,9 @@ class Select {
       // FROM
       "FROM {$this->table}",
       // WHERE
-      empty($this->where)
+      is_null($this->where)
         ? ''
-        : 'WHERE ' . Where::generate($this->bindBuilder, $this->where),
+        : 'WHERE ' . $this->where->getSql($this->bindBuilder),
       // GROUP BY
       empty($this->groupBy) ? '' : 'GROUP BY ' . implode(', ', $this->groupBy),
       // HAVING

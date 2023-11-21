@@ -1,6 +1,7 @@
 <?php
 
 use Tribal2\DbHandler\Queries\Select;
+use Tribal2\DbHandler\Queries\Where;
 
 describe('SELECT builder', function () {
 
@@ -21,6 +22,41 @@ describe('SELECT builder', function () {
     $builder->limit(5);
 
     $expected = 'SELECT `column1`, `column2` FROM `my_table` LIMIT :limit___1;';
+    expect($builder->getSql())->toBe($expected);
+  });
+
+  test('simple where', function () {
+    $builder = new Select('my_table');
+    $builder->columns(['column1', 'column2']);
+    $builder->where(
+      Where::equals('column1', 'value1')
+    );
+
+    $expected = 'SELECT `column1`, `column2` FROM `my_table` WHERE `column1` = :column1___1;';
+    expect($builder->getSql())->toBe($expected);
+  });
+
+  test('where with a mix of or/and', function () {
+    $builder = new Select('my_table');
+    $builder->columns(['column1', 'column2']);
+    $builder->where(
+      Where::or(
+        Where::equals('column1', 'value11'),
+        Where::and(
+          Where::equals('column1', 'value12'),
+          Where::equals('column3', 'value3')
+        )
+      ),
+    );
+
+    $expected = "SELECT `column1`, `column2` FROM `my_table` WHERE "
+      . "("
+      .   "`column1` = :column1___1 "
+      .   "OR ("
+      .     "`column1` = :column1___2 "
+      .     "AND `column3` = :column3___1"
+      .   ")"
+      . ");";
     expect($builder->getSql())->toBe($expected);
   });
 
