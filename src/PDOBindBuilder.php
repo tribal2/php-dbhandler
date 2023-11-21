@@ -52,12 +52,15 @@ class PDOBindBuilder {
   ) {
     $this->checkType($type);
 
-    if (!isset($this->prefixCounter[$prefix])) {
-      $this->prefixCounter[$prefix] = 0;
+    // Remove non-alphanumeric characters from prefix
+    $prefixAlpha = preg_replace('/[^a-zA-Z0-9_]/', '_', $prefix);
+
+    if (!isset($this->prefixCounter[$prefixAlpha])) {
+      $this->prefixCounter[$prefixAlpha] = 0;
     }
 
-    $this->prefixCounter[$prefix]++;
-    $placeholder = ":{$prefix}___{$this->prefixCounter[$prefix]}";
+    $this->prefixCounter[$prefixAlpha]++;
+    $placeholder = ":{$prefixAlpha}___{$this->prefixCounter[$prefixAlpha]}";
 
     $this->data[$placeholder] = [
       'value' => $value,

@@ -21,6 +21,13 @@ describe('PDOBindBuilder', function () {
     expect($placeholder2)->toBe(':prefix___2');
   });
 
+  test('addValueWithPrefix() - prefix with characters not included in [_a-Z0-9]', function () {
+    $pdoBuilder = new PDOBindBuilder();
+    $placeholder1 = $pdoBuilder->addValueWithPrefix('Test value 1', 'sum(test_table)');
+
+    expect($placeholder1)->toBe(':sum_test_table____1');
+  });
+
   test('getValues()', function () {
     $pdoBuilder = new PDOBindBuilder();
 
