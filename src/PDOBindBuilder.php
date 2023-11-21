@@ -14,12 +14,12 @@ class PDOBindBuilder {
 
 
   /**
-   * Añadir un valor y generar automáticamente un placeholder.
+   * Add a value and generate a PDO named parameters
    *
-   * @param mixed $value El valor a añadir.
-   * @param int   $type  El tipo de dato.
+   * @param mixed $value The value to add.
+   * @param int   $type  The PDO data type.
    *
-   * @return string El placeholder generado.
+   * @return string The generated PDO named parameter.
    */
   public function addValue($value, int $type = PDO::PARAM_STR) {
     $this->checkType($type);
@@ -36,14 +36,13 @@ class PDOBindBuilder {
 
 
   /**
-   * Añadir un valor y generar automáticamente un placeholder usando el prefijo
-   * suministrado.
+   * Add a value and generate a PDO named parameters with a custom prefix
    *
-   * @param mixed  $value  El valor a añadir.
-   * @param string $prefix El prefijo del placeholder.
-   * @param int    $type   El tipo de dato.
+   * @param mixed  $value  The value to add.
+   * @param string $prefix The prefix to use.
+   * @param int    $type   The PDO data type.
    *
-   * @return string El placeholder generado.
+   * @return string The generated PDO named parameter.
    */
   public function addValueWithPrefix(
     $value,
@@ -72,9 +71,9 @@ class PDOBindBuilder {
 
 
   /**
-   * Devuelve los valores añadidos
+   * Returns the key-value array of values. The key is the PDO named parameter.
    *
-   * @return array
+   * @return array The key-value array of values.
    */
   public function getValues(): array {
     return $this->data;
@@ -82,11 +81,13 @@ class PDOBindBuilder {
 
 
   /**
-   * Bind de los valores al statement de PDO.
+   * Bind the values to a PDOStatement.
    *
-   * @param PDOStatement $stmt El statement de PDO.
+   * @param PDOStatement $stmt The PDOStatement to bind the values to.
+   *
+   * @return void
    */
-  public function bindToStatement(PDOStatement $stmt) {
+  public function bindToStatement(PDOStatement $stmt): void {
     foreach ($this->data as $placeholder => $valueCfg) {
         $stmt->bindValue(
           $placeholder,
@@ -98,11 +99,11 @@ class PDOBindBuilder {
 
 
   /**
-   * Devuelve el query con los valores añadidos en forma de string.
+   * Generate a SQL query with the values replaced.
    *
-   * @param string $query
+   * @param string $query The SQL query.
    *
-   * @return string
+   * @return string The generated SQL query.
    */
   public function debugQuery(string $query): string {
     $values = [];
@@ -117,10 +118,12 @@ class PDOBindBuilder {
 
 
   /**
-   * Comprueba que el tipo de dato sea válido.
-   * https://www.php.net/manual/es/pdo.constants.php
+   * Check if the type is valid.
+   * https://www.php.net/manual/en/pdo.constants.php
    *
-   * @param int $type
+   * @param int $type The PDO data type.
+   *
+   * @throws Exception If the type is not valid.
    *
    * @return void
    */
@@ -141,7 +144,7 @@ class PDOBindBuilder {
         ],
       )
     ) {
-      throw new Exception("Tipo de dato no válido");
+      throw new Exception("Invalid PDO data type: {$type}");
     }
   }
 
