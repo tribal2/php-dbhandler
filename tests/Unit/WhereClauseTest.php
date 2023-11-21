@@ -3,7 +3,7 @@
 use Tribal2\DbHandler\Queries\WhereClause;
 use Tribal2\DbHandler\PDOBindBuilder;
 
-describe('WhereClause', function () {
+describe('WhereClause - getSql()', function () {
 
   beforeEach(function() {
     $this->bindBuilder = new PDOBindBuilder();
@@ -17,6 +17,25 @@ describe('WhereClause', function () {
   test('notEquals creates a correct WhereClause', function () {
     $clause = WhereClause::notEquals('column', 'value');
     expect($clause->getSql($this->bindBuilder))->toEqual("`column` <> :column___1");
+  });
+
+  test('isNull creates a correct WhereClause', function () {
+    $clause = WhereClause::isNull('column');
+    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS :column___1");
+  });
+
+  test('isNotNull creates a correct WhereClause', function () {
+    $clause = WhereClause::isNotNull('column');
+    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS NOT :column___1");
+  });
+
+});
+
+
+describe('WhereClause - getSqlForArrayOfValues()', function () {
+
+  beforeEach(function() {
+    $this->bindBuilder = new PDOBindBuilder();
   });
 
   test('in creates a correct WhereClause for an array of values', function () {
@@ -35,17 +54,16 @@ describe('WhereClause', function () {
     expect($clause2->getSql($this->bindBuilder))->toEqual("`column` NOT BETWEEN :column___3 AND :column___4");
   });
 
-  test('isNull creates a correct WhereClause', function () {
-    $clause = WhereClause::isNull('column');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS :column___1");
+});
+
+
+describe('WhereClause - verify sql after binding values', function () {
+
+  beforeEach(function() {
+    $this->bindBuilder = new PDOBindBuilder();
   });
 
-  test('isNotNull creates a correct WhereClause', function () {
-    $clause = WhereClause::isNotNull('column');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS NOT :column___1");
-  });
-
-  test('verify sql after binding numeric values', function () {
+  test('numeric values', function () {
     $clause = WhereClause::in('column', [100, 200]);
     $sql = $clause->getSql($this->bindBuilder);
 
@@ -53,7 +71,7 @@ describe('WhereClause', function () {
     expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IN (100, 200)");
   });
 
-  test('verify sql after binding string values', function () {
+  test('string values', function () {
     $clause = WhereClause::in('column', ['first', 'second']);
     $sql = $clause->getSql($this->bindBuilder);
 
