@@ -2,6 +2,7 @@
 
 namespace Tribal2\DbHandler\Queries;
 
+use Exception;
 use PDO;
 use stdClass;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
@@ -181,6 +182,21 @@ class Select {
     $result = $this->fetchColumn($colName);
 
     return $result[0] ?? NULL;
+  }
+
+
+  public function fetchDistincts(string $colName): array {
+    if (is_null($colName)) {
+      throw new Exception('Column name must be specified');
+    }
+
+    return $this->fetchColumn("DISTINCT(`{$colName}`)");
+  }
+
+
+  public function fetchCount(): int {
+    $result = $this->fetchValue('COUNT(*)');
+    return (int)$result;
   }
 
 

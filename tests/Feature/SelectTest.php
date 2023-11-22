@@ -146,3 +146,42 @@ describe('fetchValue()', function () {
   });
 
 });
+
+
+describe('functions', function () {
+
+  test('DISTINCT()', function () {
+    $res = Select::from('test_table')
+      ->fetchColumn('DISTINCT(`key`)');
+
+    expect($res)->toBeArray();
+    expect($res)->toHaveCount(2);
+    expect($res[0])->toBe('test1');
+    expect($res[1])->toBe('test2');
+  });
+
+  test('DISTINCT() using method', function () {
+    $res = Select::from('test_table')
+      ->fetchDistincts('key');
+
+    expect($res)->toBeArray();
+    expect($res)->toHaveCount(2);
+    expect($res[0])->toBe('test1');
+    expect($res[1])->toBe('test2');
+  });
+
+  test('COUNT()', function () {
+    $res = Select::from('test_table')
+      ->fetchValue('COUNT(*)');
+
+    expect($res)->toBe('2');
+  });
+
+  test('COUNT() using method', function () {
+    $res = Select::from('test_table')
+      ->fetchCount();
+
+    expect($res)->toBe(2);
+  });
+
+});
