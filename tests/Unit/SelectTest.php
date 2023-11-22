@@ -5,49 +5,53 @@ use Tribal2\DbHandler\Queries\Where;
 
 describe('SELECT builder', function () {
 
+  test('static factory', function () {
+    expect(Select::from('my_table'))->toBeInstanceOf(Select::class);
+  });
+
   test('all columns from a table', function () {
-    $builder = new Select('my_table');
+    $builder = Select::from('my_table');
 
     expect($builder->getSql())->toBe('SELECT * FROM `my_table`;');
   });
 
   test('throws on invalid columns', function () {
-    $builder = new Select('my_table');
-    $builder->columns(['column1', 1234, TRUE]);
+    Select::from('my_table')
+      ->columns(['column1', 1234, TRUE]);
   })->throws(\Exception::class);
 
   test('first 5 records of table with column1 and column2', function () {
-    $builder = new Select('my_table');
-    $builder->columns(['column1', 'column2']);
-    $builder->limit(5);
+    $builder = Select::from('my_table')
+      ->columns(['column1', 'column2'])
+      ->limit(5);
 
     $expected = 'SELECT `column1`, `column2` FROM `my_table` LIMIT :limit___1;';
     expect($builder->getSql())->toBe($expected);
   });
 
   test('simple where', function () {
-    $builder = new Select('my_table');
-    $builder->columns(['column1', 'column2']);
-    $builder->where(
-      Where::equals('column1', 'value1')
-    );
+    $builder = Select::from('my_table')
+      ->columns(['column1', 'column2'])
+      ->where(
+        Where::equals('column1', 'value1')
+      );
 
     $expected = 'SELECT `column1`, `column2` FROM `my_table` WHERE `column1` = :column1___1;';
     expect($builder->getSql())->toBe($expected);
   });
 
   test('where with a mix of or/and', function () {
-    $builder = new Select('my_table');
-    $builder->columns(['column1', 'column2']);
-    $builder->where(
-      Where::or(
-        Where::equals('column1', 'value11'),
-        Where::and(
-          Where::equals('column1', 'value12'),
-          Where::equals('column3', 'value3')
-        )
-      ),
-    );
+    $builder = Select::from('my_table')
+      ->columns(['column1', 'column2'])
+      ->where(
+        Where::or(
+          Where::equals('column1', 'value11'),
+          Where::and(
+            Where::equals('column1', 'value12'),
+            Where::equals('column3', 'value3')
+          )
+        ),
+      );
 
     $expected = "SELECT `column1`, `column2` FROM `my_table` WHERE "
       . "("
@@ -65,8 +69,8 @@ describe('SELECT builder', function () {
 
 describe('SELECT builder with grouping', function () {
   test('simple where', function () {
-    $builder = new Select('my_table');
-    $builder->column('column1')
+    $builder = Select::from('my_table')
+      ->column('column1')
       ->column('sum(column2)')
       ->groupBy('column1')
       ->having(Where::greaterThan('sum(column2)', 0));

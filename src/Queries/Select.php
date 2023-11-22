@@ -32,7 +32,13 @@ class Select {
   private string $offset = '';
 
 
-  public function __construct(string $table) {
+
+  public static function from(string $table): self {
+    return new self($table);
+  }
+
+
+  private function __construct(string $table) {
     $this->table = Common::quoteWrap($table);
     $this->bindBuilder = new PDOBindBuilder();
   }
