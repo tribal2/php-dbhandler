@@ -12,6 +12,7 @@ use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Queries\Common;
+use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
 
 class DbHandler {
@@ -72,6 +73,11 @@ class DbHandler {
     }
 
     return self::$instances[$class];
+  }
+
+
+  final public static function select(string $table): Select {
+    return Select::from($table);
   }
 
 

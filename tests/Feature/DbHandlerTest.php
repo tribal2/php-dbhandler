@@ -5,6 +5,7 @@ use Tribal2\DbHandler\DbTransaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Queries\Where;
 
 require_once __DIR__ . '/_DbTestSchema.php';
 
@@ -921,4 +922,15 @@ describe('DbHandler handleException', function () {
     500
   );
 
+});
+
+
+describe('DbHandler static method queries', function () {
+  test('select', function () {
+    $result = DbHandler::select('test_table')
+      ->where(Where::equals('test_table_id', 1))
+      ->fetchValue('value');
+
+    expect($result)->toBe('Test value 1');
+  });
 });
