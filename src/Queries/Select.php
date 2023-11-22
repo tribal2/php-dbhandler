@@ -112,7 +112,8 @@ class Select {
     string $column,
     OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
   ): self {
-    $this->orderBy[] = "{$column} {$direction}";
+    $quotedCol = Common::quoteWrap($column);
+    $this->orderBy[] = "{$quotedCol} {$direction->value}";
     return $this;
   }
 
