@@ -15,6 +15,7 @@ use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Schema;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
+use Tribal2\DbHandler\Table\Columns;
 
 class DbHandler {
 
@@ -207,54 +208,13 @@ class DbHandler {
       $inCache = self::$cache->get(__METHOD__, func_get_args());
       if (!empty($inCache)) { return $inCache; }
 
-      // Obtenemos el nombre de la base de datos
-      $this->dbName = empty($this->dbName)
-                      ? $this->dbh->query('SELECT database();')->fetchColumn()
-                      : $this->dbName;
-
-      // Creamos la consulta y la ejecutamos
-      $query = "
-        SELECT
-            COLUMN_NAME,
-            COLUMN_KEY,
-            EXTRA
-        FROM
-            information_schema.COLUMNS
-        WHERE
-            TABLE_SCHEMA   = :db
-            AND TABLE_NAME = :table;
-      ";
-
-      // Pegamos variables y ejecutamos consulta
-      $sth = $this->dbh->prepare($query);
-      self::$logger::log($query, "QUERY");
-      $sth->bindValue(':db', $this->dbName);
-      self::$logger::log($this->dbName, ":db");
-      $sth->bindValue(':table', $table);
-      self::$logger::log($table, ":table");
-
-      $sth->execute();
-
-      $dbColumns = $sth->fetchAll(PDO::FETCH_OBJ);
-      self::$logger::log($dbColumns, "RESULTS");
-
-      $columns = new stdClass;
-      $columns->all = [];
-      $columns->non = [];
-      $columns->key = [];
-      $columns->inc = [];
-
-      foreach($dbColumns as $row) {
-        $columns->all[] = $row->COLUMN_NAME;
-        if ($row->COLUMN_KEY === 'PRI') {
-          $columns->key[] = $row->COLUMN_NAME;
-          if ($row->EXTRA === 'auto_increment') {
-            $columns->inc[] = $row->COLUMN_NAME;
-          }
-        } else {
-          $columns->non[] = $row->COLUMN_NAME;
-        }
-      }
+      $columnsInstance = Columns::for($table);
+      $columns = (object)[
+        'all' => $columnsInstance->columns,
+        'non' => $columnsInstance->nonKey,
+        'key' => $columnsInstance->key,
+        'inc' => $columnsInstance->autoincrement,
+      ];
 
       self::$cache->set(__METHOD__, func_get_args(), $columns);
 
@@ -263,7 +223,6 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
