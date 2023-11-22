@@ -24,7 +24,7 @@ class Select {
 
   private array $groupBy = [];
 
-  private array $having = [];
+  private ?Where $having = NULL;
 
   private array $orderBy = [];
 
@@ -68,12 +68,12 @@ class Select {
   }
 
 
-  public function having(array $having): self {
+  public function having(Where $having): self {
     if (count($this->groupBy) === 0) {
       throw new \Exception('HAVING clause requires GROUP BY clause');
     }
 
-    $this->having[] = $having;
+    $this->having = $having;
     return $this;
   }
 
@@ -138,11 +138,11 @@ class Select {
         ? ''
         : 'WHERE ' . $this->where->getSql($this->bindBuilder),
       // GROUP BY
-      empty($this->groupBy) ? '' : 'GROUP BY ' . implode(', ', $this->groupBy),
+      empty($this->groupBy) ? '' : 'GROUP BY ' . Common::parseColumns($this->groupBy),
       // HAVING
-      empty($this->having)
+      is_null($this->having)
         ? ''
-        : 'HAVING ' . Where::generate($this->bindBuilder, $this->having),
+        : 'HAVING ' . $this->having->getSql($this->bindBuilder),
       // ORDER BY
       empty($this->orderBy) ? '' : 'ORDER BY ' . implode(', ', $this->orderBy),
       // LIMIT

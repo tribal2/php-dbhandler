@@ -61,3 +61,19 @@ describe('SELECT builder', function () {
   });
 
 });
+
+
+describe('SELECT builder with grouping', function () {
+  test('simple where', function () {
+    $builder = new Select('my_table');
+    $builder->column('column1')
+      ->column('sum(column2)')
+      ->groupBy('column1')
+      ->having(Where::greaterThan('sum(column2)', 0));
+
+    $expected = "SELECT `column1`, sum(column2) FROM `my_table` "
+      . "GROUP BY `column1` HAVING sum(column2) > :sum_column2____1;";
+
+    expect($builder->getSql())->toBe($expected);
+  });
+});
