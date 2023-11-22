@@ -2,8 +2,11 @@
 
 namespace Tribal2\DbHandler\Queries;
 
+use PDO;
+use stdClass;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
@@ -31,6 +34,7 @@ class Select {
   private string $limit = '';
   private string $offset = '';
 
+  private int $fetchMethod = PDO::FETCH_OBJ;
 
 
   public static function from(string $table): self {
@@ -88,7 +92,7 @@ class Select {
     $limitPlaceHolder = $this->bindBuilder->addValueWithPrefix(
       $limit,
       'limit',
-      \PDO::PARAM_INT
+      PDO::PARAM_INT
     );
 
     $this->limit = "LIMIT {$limitPlaceHolder}";
@@ -100,7 +104,7 @@ class Select {
     $offsetPlaceHolder = $this->bindBuilder->addValueWithPrefix(
       $offset,
       'offset',
-      \PDO::PARAM_INT
+      PDO::PARAM_INT
     );
 
     $this->offset = "OFFSET {$offsetPlaceHolder}";
@@ -118,9 +122,17 @@ class Select {
   }
 
 
-  public function execute(\PDO $pdo, $options): array {
+  public function fetchMethod(int $method): self {
+    $this->fetchMethod = $method;
+    return $this;
+  }
+
+
+  public function execute(?PDO $pdo = NULL): array {
+    $_pdo = $pdo ?? PDOSingleton::get();
+
     $query = $this->getSql();
-    $pdoStatement = $pdo->prepare($query);
+    $pdoStatement = $_pdo->prepare($query);
 
     // Bind values
     $this->bindBuilder->bindToStatement($pdoStatement);
@@ -128,8 +140,47 @@ class Select {
     // Execute query
     $pdoStatement->execute();
 
-    // Return results
-    return $pdoStatement->fetchAll($options);
+    return $pdoStatement->fetchAll($this->fetchMethod);
+  }
+
+
+  public function fetchAll(): array {
+    return $this->execute();
+  }
+
+
+  public function fetchFirst(): ?stdClass {
+    $result = $this
+      ->limit(1)
+      ->execute();
+
+    return $result[0] ?? NULL;
+  }
+
+
+  public function fetchColumn(?string $colName = NULL): array {
+    if (!is_null($colName)) {
+      $this->columns = [ $colName ];
+    }
+
+    // Check if there is only one column
+    if (is_null($colName) && count($this->columns) !== 1) {
+      throw new \Exception('Only one column can be selected');
+    }
+
+    $result = $this
+      ->fetchMethod(PDO::FETCH_COLUMN)
+      ->execute();
+
+    return $result;
+  }
+
+
+  public function fetchValue(?string $colName = NULL): ?string {
+    $this->limit(1);
+    $result = $this->fetchColumn($colName);
+
+    return $result[0] ?? NULL;
   }
 
 
@@ -225,7 +276,7 @@ class Select {
     $limit = $queryArr['limit'] ?? 0;
     $_limit = ($limit === 0)
       ? ''
-      : 'LIMIT ' . $bindBuilder->addValue($limit, \PDO::PARAM_INT);
+      : 'LIMIT ' . $bindBuilder->addValue($limit, PDO::PARAM_INT);
 
     // Configuramos el final del query
     $queryEndArr = [];
