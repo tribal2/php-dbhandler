@@ -12,6 +12,7 @@ use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Queries\Common;
+use Tribal2\DbHandler\Schema;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
 
@@ -174,27 +175,19 @@ class DbHandler {
   /**
    * Función de ayuda para verificar la existencia de una tabla en la base de datos
    *
-   * @param str $table Nombre de la tabla.
+   * @param string $table Nombre de la tabla.
    *
    * @return bool T:Sí existe | F: No existe
    * @throws Exception
    */
-  public function checkIfTableExists($table) {
+  public function checkIfTableExists(string $table) {
     try {
       self::$logger::log();
 
-      // Creamos la consulta y la ejecutamos
-      $query = "SHOW TABLES LIKE :table;";
-      $sth = $this->dbh->prepare($query);
-      $sth->bindValue(':table', $table);
-
-      $sth->execute();
-
-      return ($sth->rowCount() === 1);
+      return Schema::checkIfTableExists($table);
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
