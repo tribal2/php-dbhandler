@@ -29,6 +29,11 @@ class Columns {
   }
 
 
+  public function has(string $column): bool {
+    return in_array($column, $this->columns);
+  }
+
+
   private function fetch(): array {
     $pdo = PDOSingleton::get();
     $dbName = PDOSingleton::getDBName();
