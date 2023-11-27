@@ -19,6 +19,28 @@ describe('Where::getSql()', function () {
     expect($clause->getSql($this->bindBuilder))->toEqual("`column` <> :column___1");
   });
 
+  test('equals/notEquals with an array of values', function () {
+    $values = [
+      'value',
+      123,
+      TRUE,
+    ];
+
+    // EQUALS
+    $clauseEqStr = Where::equals('column', $values)
+      ->getSql($this->bindBuilder);
+
+    $expectedIn = "(:column___1, :column___2, :column___3)";
+    expect($clauseEqStr)->toEqual("`column` IN {$expectedIn}");
+
+    // NOT EQUALS
+    $clauseNotEqStr = Where::notEquals('column', $values)
+      ->getSql($this->bindBuilder);
+
+    $expectedNotIn = "(:column___4, :column___5, :column___6)";
+    expect($clauseNotEqStr)->toEqual("`column` NOT IN {$expectedNotIn}");
+  });
+
   test('isNull creates a correct WhereClause', function () {
     $clause = Where::isNull('column');
     expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS :column___1");

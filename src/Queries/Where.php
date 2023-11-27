@@ -98,6 +98,8 @@ class Where {
 
 
   public static function equals(string $key, $value): Where {
+    if (is_array($value)) return self::in($key, $value);
+
     $pdoType = Common::checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
       SqlValueTypeEnum::FLOAT,
@@ -109,6 +111,8 @@ class Where {
 
 
   public static function notEquals(string $key, $value): Where {
+    if (is_array($value)) return self::notIn($key, $value);
+
     $pdoType = Common::checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
       SqlValueTypeEnum::FLOAT,
