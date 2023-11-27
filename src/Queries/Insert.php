@@ -57,11 +57,12 @@ class Insert {
     // Check if there are collisions
     $this->checkForCollisions();
 
-    $query = $this->getSql();
+    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
+
+    $query = $this->getSql($bindBuilder);
     $pdoStatement = $_pdo->prepare($query);
 
     // Bind values
-    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
     $bindBuilder->bindToStatement($pdoStatement);
 
     // Execute query
