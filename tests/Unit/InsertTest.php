@@ -1,9 +1,7 @@
 <?php
 
-use Mockery\Mock;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Insert;
-use Tribal2\DbHandler\Table\Columns;
 
 require_once __DIR__ . '/../Feature/_DbTestSchema.php';
 

@@ -21,6 +21,8 @@ class DbTestSchema {
 
     PDOSingleton::configure($dbConfig);
 
+    self::down();
+
     /*
     * DB Dummy data setup
     */
