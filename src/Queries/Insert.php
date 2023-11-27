@@ -24,7 +24,7 @@ class Insert {
 
 
   private function __construct(string $table) {
-    $this->table = Common::quoteWrap($table);
+    $this->table = $table;
     $this->dbColumns = Columns::for($table);
   }
 
@@ -100,7 +100,9 @@ class Insert {
     $qColumns = implode(', ', $queryColumns);
     $qParams = implode(', ', $queryParams);
 
-    $query = "INSERT INTO {$this->table} ({$qColumns}) VALUES ({$qParams});";
+    $quotedTable = Common::quoteWrap($this->table);
+
+    $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES ({$qParams});";
 
     return $query;
   }
@@ -130,7 +132,7 @@ class Insert {
 
     if (!is_null($exists)) {
       throw new Exception(
-        "The values you are trying to insert already exist in the database",
+        'The values you are trying to insert already exist in the database',
         409,
       );
     }

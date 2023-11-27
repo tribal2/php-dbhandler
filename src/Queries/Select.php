@@ -44,7 +44,7 @@ class Select {
 
 
   private function __construct(string $table) {
-    $this->table = Common::quoteWrap($table);
+    $this->table = $table;
     $this->bindBuilder = new PDOBindBuilder();
   }
 
@@ -201,12 +201,14 @@ class Select {
 
 
   public function getSql(): string {
+    $quotedTable = Common::quoteWrap($this->table);
+
     $queryParts = [
       // SELECT
       'SELECT',
       empty($this->columns) ? '*' : Common::parseColumns($this->columns),
       // FROM
-      "FROM {$this->table}",
+      "FROM {$quotedTable}",
       // WHERE
       is_null($this->where)
         ? ''
