@@ -4,8 +4,9 @@ namespace Tribal2\DbHandler\Queries;
 
 use PDO;
 use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 
-class Common {
+class Common implements CommonInterface {
 
 
   /**
@@ -14,7 +15,7 @@ class Common {
    *
    * @return string
    */
-  public static function quoteWrap(string $column): string {
+  public function quoteWrap(string $column): string {
     // If column is * or a function, don't quote it
     if (preg_match('/\w+\(.*\)|\*/', $column)) {
       return $column;
@@ -30,7 +31,7 @@ class Common {
    *
    * @return string
    */
-  public static function parseColumns($cols): string {
+  public function parseColumns($cols): string {
     $_cols = is_string($cols)
       ? explode(',', $cols)
       : $cols;
@@ -54,7 +55,7 @@ class Common {
    *
    * @return ?int
    */
-  public static function checkValue(
+  public function checkValue(
     $value,
     ?string $column = NULL,
     array $expectedType = [],
