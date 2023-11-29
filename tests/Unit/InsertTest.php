@@ -1,22 +1,21 @@
 <?php
 
+use Tribal2\DbHandler\Interfaces\ColumnsInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Insert;
 
-require_once __DIR__ . '/../Feature/_DbTestSchema.php';
-
-beforeAll(function () {
-  DbTestSchema::up();
-});
-
-afterAll(function () {
-  DbTestSchema::down();
-});
 
 describe('Builder', function () {
 
   test('static factory', function () {
-    expect(Insert::into('my_table'))->toBeInstanceOf(Insert::class);
+    $insert = new Insert('my_table', [
+      '_pdo' => Mockery::mock(PDO::class),
+      '_columns' => Mockery::mock(ColumnsInterface::class),
+      '_common' => Mockery::mock(CommonInterface::class),
+    ]);
+
+    expect($insert)->toBeInstanceOf(Insert::class);
   });
 
 });
@@ -24,8 +23,17 @@ describe('Builder', function () {
 
 describe('Insert values', function () {
 
+  beforeEach(function () {
+    $this->dependencies = [
+      '_pdo' => Mockery::mock(PDO::class),
+      '_columns' => Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+      '_common' => Mockery::mock(CommonInterface::class, [ 'checkValue' => NULL ]),
+    ];
+  });
+
   test('value() adds a column/value to the insert query', function () {
-    $values = Insert::into('test_table')
+    $insert = new Insert('test_table', $this->dependencies);
+    $values = $insert
       ->value('value', 'value1')
       ->getValues();
 
@@ -35,7 +43,8 @@ describe('Insert values', function () {
   });
 
   test('values() adds multiple values correctly', function () {
-    $values = Insert::into('test_table')
+    $insert = new Insert('test_table', $this->dependencies);
+    $values = $insert
       ->values([
         'key' => 'key1',
         'value' => 'value',
@@ -49,7 +58,8 @@ describe('Insert values', function () {
   });
 
   test('value() and values() chained', function () {
-    $values = Insert::into('test_table')
+    $insert = new Insert('test_table', $this->dependencies);
+    $values = $insert
       ->value('key', 'key1')
       ->values([
         'value' => 25,
@@ -65,7 +75,9 @@ describe('Insert values', function () {
   });
 
   test('value() ignores columns that are not on the table', function () {
-    $values = Insert::into('test_table')
+    $this->dependencies['_columns']->shouldReceive('has')->andReturn(FALSE);
+    $insert = new Insert('test_table', $this->dependencies);
+    $values = $insert
       ->value('column1', 'value1')
       ->getValues();
 
@@ -74,13 +86,14 @@ describe('Insert values', function () {
   });
 
   test('value() throws on invalid value', function () {
-    Insert::into('test_table')
-      ->value('value', [ 1, 2, 3 ])
-      ->getValues();
+    $this->dependencies['_common']->shouldReceive('checkValue')->andThrow(Exception::class);
+    $insert = new Insert('test_table', $this->dependencies);
+    $insert->value('value', [ 1, 2, 3 ]);
   })->throws(Exception::class);
 
   test('rows()', function () {
-    $values = Insert::into('test_table')
+    $insert = new Insert('test_table', $this->dependencies);
+    $values = $insert
       ->rows([
         [ 'key' => 'key1', 'value' => 25 ],
         [ 'key' => 'key2' ],
@@ -104,9 +117,28 @@ describe('Insert values', function () {
 
 describe('SQL', function () {
 
+  beforeEach(function () {
+    $this->dependencies = [
+      '_pdo' => Mockery::mock(PDO::class),
+      '_columns' => Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+      '_common' => Mockery::mock(CommonInterface::class, [ 'checkValue' => NULL ]),
+    ];
+  });
+
   test('getSql() returns a valid SQL string', function () {
     $bindBuilder = new PDOBindBuilder();
-    $sql = Insert::into('test_table')
+
+    $this->dependencies['_common']
+      ->shouldReceive('quoteWrap')->with('test_table')->andReturn('`test_table`')
+      ->shouldReceive('quoteWrap')->with('key')->andReturn('`key`')
+      ->shouldReceive('quoteWrap')->with('value')->andReturn('`value`')
+      ->shouldReceive('quoteWrap')->with('created_at')->andReturn('`created_at`')
+      ->shouldReceive('checkValue')->with(25, 'key')->andReturn(PDO::PARAM_INT)
+      ->shouldReceive('checkValue')->with(NULL, 'value')->andReturn(PDO::PARAM_NULL)
+      ->shouldReceive('checkValue')->with('2020-01-01 00:00:00', 'created_at')->andReturn(PDO::PARAM_STR);
+
+    $insert = new Insert('test_table', $this->dependencies);
+    $sql = $insert
       ->value('key', 25)
       ->values([
         'value' => NULL,
@@ -128,7 +160,15 @@ describe('SQL', function () {
 
   test('getSql() returns a valid SQL string when using rows() to insert multiple rows', function () {
     $bindBuilder = new PDOBindBuilder();
-    $sql = Insert::into('test_table')
+
+    $this->dependencies['_common']
+      ->shouldReceive('quoteWrap')->with('test_table')->andReturn('`test_table`')
+      ->shouldReceive('quoteWrap')->with('key')->andReturn('`key`')
+      ->shouldReceive('quoteWrap')->with('value')->andReturn('`value`')
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+
+    $insert = new Insert('test_table', $this->dependencies);
+    $sql = $insert
       ->rows([
         [ 'key' => 'key1', 'value' => 'value1' ],
         [ 'key' => 'key2', 'value' => 25 ],
