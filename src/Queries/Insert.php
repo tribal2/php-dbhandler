@@ -149,18 +149,25 @@ class Insert {
 
     // If the primary key is not autoincremented we make sure it is not repeated
     $wheres = [];
-    foreach ($this->dbColumns->key as $keyColName) {
-      if (isset($this->values[$keyColName])) {
-        $wheres[] = Where::equals(
-          $keyColName,
-          $this->values[$keyColName],
-        );
+    foreach ($this->values as $row) {
+      $rowWhere = [];
+      foreach ($this->dbColumns->key as $keyColName) {
+        if (isset($row[$keyColName])) {
+          $rowWhere[] = Where::equals(
+            $keyColName,
+            $row[$keyColName],
+          );
+        }
+      }
+
+      if (count($rowWhere) > 0) {
+        $wheres[] = Where::and(...$rowWhere);
       }
     }
 
     if (count($wheres) === 0) return;
 
-    $where = Where::and(...$wheres);
+    $where = Where::or(...$wheres);
     $exists = Select::from($this->table)
       ->where($where)
       ->fetchFirst();
