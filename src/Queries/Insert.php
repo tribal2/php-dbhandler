@@ -15,7 +15,7 @@ class Insert {
 
   private string $table;
   private Columns $dbColumns;
-  private array $values = [];
+  private array $values = [ [] ];
 
 
   public static function into(string $table): self {
@@ -30,9 +30,13 @@ class Insert {
 
 
   public function value(string $column, $value): self {
+    // Select the last row in the values array
+    $row = &$this->values[count($this->values) - 1];
+
+    // Add the value to the row if the column exists in the database
     if ($this->dbColumns->has($column)) {
       Common::checkValue($value, $column);
-      $this->values[$column] = $value;
+      $row[$column] = $value;
     }
 
     return $this;
@@ -45,6 +49,75 @@ class Insert {
     }
 
     return $this;
+  }
+
+
+  public function rows(array $rows): self {
+    // We only take the columns that exist in the database from the first row
+    $columns = [];
+    foreach ($rows[0] as $col => $_) {
+      if ($this->dbColumns->has($col)) $columns[] = $col;
+    }
+
+    // We check the values of each row, if there is no value for a column we
+    // set it to NULL
+    $this->values = [];
+    foreach ($rows as $row) {
+      $valueRow = [];
+      foreach ($columns as $col) {
+        $valueRow[$col] = $row[$col] ?? NULL;
+      }
+      $this->values[] = $valueRow;
+    }
+
+    return $this;
+  }
+
+
+  public function getValues(): array {
+    return $this->values;
+  }
+
+
+  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+    if (count($this->values) === 0) {
+      throw new Exception(
+        'You must provide at least one value to insert',
+        400,
+      );
+    }
+
+    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
+
+    $columns = [];
+    $queryColumns = [];
+    foreach ($this->values[0] as $col => $_) {
+      $columns[] = $col;
+      $queryColumns[] = Common::quoteWrap($col);
+    }
+
+    $rows = [];
+    foreach ($this->values as $row) {
+      $queryParams = [];
+      foreach ($columns as $col) {
+        $value = $row[$col] ?? NULL;
+        $queryParams[] = $bindBuilder->addValueWithPrefix(
+          $value,
+          $col,
+          Common::checkValue($value, $col),
+        );
+      }
+      $rows[] = '(' . implode(', ', $queryParams) . ')';
+    }
+
+    $qColumns = implode(', ', $queryColumns);
+    $qRows = implode(', ', $rows);
+
+    $quotedTable = Common::quoteWrap($this->table);
+
+    $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES {$qRows};";
+
+    return $query;
   }
 
 
@@ -67,44 +140,6 @@ class Insert {
 
     // Execute query
     return $pdoStatement->execute();
-  }
-
-
-  public function getValues(): array {
-    return $this->values;
-  }
-
-
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
-    if (count($this->values) === 0) {
-      throw new Exception(
-        'You must provide at least one value to insert',
-        400,
-      );
-    }
-
-    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
-
-    $queryColumns = [];
-    $queryParams = [];
-
-    foreach ($this->values as $col => $value) {
-      $queryColumns[] = Common::quoteWrap($col);
-      $queryParams[] = $bindBuilder->addValueWithPrefix(
-        $value,
-        $col,
-        Common::checkValue($value, $col),
-      );
-    }
-
-    $qColumns = implode(', ', $queryColumns);
-    $qParams = implode(', ', $queryParams);
-
-    $quotedTable = Common::quoteWrap($this->table);
-
-    $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES ({$qParams});";
-
-    return $query;
   }
 
 
