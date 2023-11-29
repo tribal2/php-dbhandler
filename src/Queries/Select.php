@@ -13,8 +13,6 @@ use Tribal2\DbHandler\Queries\Where;
 
 class Select {
 
-  private PDOBindBuilder $bindBuilder;
-
   private string $table;
 
   /**
@@ -23,17 +21,12 @@ class Select {
    * @var string[]
    */
   private array $columns = [];
-
   private ?Where $where = NULL;
-
   private array $groupBy = [];
-
   private ?Where $having = NULL;
-
   private array $orderBy = [];
-
-  private string $limit = '';
-  private string $offset = '';
+  private ?int $limit = NULL;
+  private ?int $offset = NULL;
 
   private int $fetchMethod = PDO::FETCH_OBJ;
 
@@ -45,7 +38,6 @@ class Select {
 
   private function __construct(string $table) {
     $this->table = $table;
-    $this->bindBuilder = new PDOBindBuilder();
   }
 
 
@@ -90,25 +82,13 @@ class Select {
 
 
   public function limit(int $limit): self {
-    $limitPlaceHolder = $this->bindBuilder->addValueWithPrefix(
-      $limit,
-      'limit',
-      PDO::PARAM_INT
-    );
-
-    $this->limit = "LIMIT {$limitPlaceHolder}";
+    $this->limit = $limit;
     return $this;
   }
 
 
   public function offset(int $offset): self {
-    $offsetPlaceHolder = $this->bindBuilder->addValueWithPrefix(
-      $offset,
-      'offset',
-      PDO::PARAM_INT
-    );
-
-    $this->offset = "OFFSET {$offsetPlaceHolder}";
+    $this->offset = $offset;
     return $this;
   }
 
@@ -129,14 +109,18 @@ class Select {
   }
 
 
-  public function execute(?PDO $pdo = NULL): array {
+  public function execute(
+    ?PDO $pdo = NULL,
+    ?PDOBindBuilder $bindBuilder = NULL
+  ): array {
     $_pdo = $pdo ?? PDOSingleton::get();
+    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
-    $query = $this->getSql();
+    $query = $this->getSql($_bindBuilder);
     $pdoStatement = $_pdo->prepare($query);
 
     // Bind values
-    $this->bindBuilder->bindToStatement($pdoStatement);
+    $_bindBuilder->bindToStatement($pdoStatement);
 
     // Execute query
     $pdoStatement->execute();
@@ -200,31 +184,43 @@ class Select {
   }
 
 
-  public function getSql(): string {
-    $quotedTable = Common::quoteWrap($this->table);
+  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
     $queryParts = [
       // SELECT
       'SELECT',
       empty($this->columns) ? '*' : Common::parseColumns($this->columns),
       // FROM
-      "FROM {$quotedTable}",
+      'FROM ' . Common::quoteWrap($this->table),
       // WHERE
       is_null($this->where)
-        ? ''
-        : 'WHERE ' . $this->where->getSql($this->bindBuilder),
+        ? NULL
+        : 'WHERE ' . $this->where->getSql($_bindBuilder),
       // GROUP BY
-      empty($this->groupBy) ? '' : 'GROUP BY ' . Common::parseColumns($this->groupBy),
+      empty($this->groupBy) ? NULL : 'GROUP BY ' . Common::parseColumns($this->groupBy),
       // HAVING
       is_null($this->having)
-        ? ''
-        : 'HAVING ' . $this->having->getSql($this->bindBuilder),
+        ? NULL
+        : 'HAVING ' . $this->having->getSql($_bindBuilder),
       // ORDER BY
       empty($this->orderBy) ? '' : 'ORDER BY ' . implode(', ', $this->orderBy),
       // LIMIT
-      $this->limit,
+      is_null($this->limit)
+        ? NULL
+        : 'LIMIT ' . $_bindBuilder->addValueWithPrefix(
+          $this->limit,
+          'limit',
+          PDO::PARAM_INT
+        ),
       // OFFSET
-      $this->offset,
+      is_null($this->offset)
+        ? NULL
+        : 'OFFSET ' . $_bindBuilder->addValueWithPrefix(
+          $this->offset,
+          'offset',
+          PDO::PARAM_INT
+        ),
     ];
 
     return implode(' ', array_filter($queryParts)) . ';';
