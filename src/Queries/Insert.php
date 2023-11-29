@@ -4,28 +4,17 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
-
+use Tribal2\DbHandler\Abstracts\ModQueryAbstract;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
-use Tribal2\DbHandler\Queries\Common;
-use Tribal2\DbHandler\Queries\Where;
-use Tribal2\DbHandler\Table\Columns;
 
-class Insert {
+class Insert extends ModQueryAbstract {
 
-  private string $table;
-  private Columns $dbColumns;
   private array $values = [ [] ];
 
 
   public static function into(string $table): self {
     return new self($table);
-  }
-
-
-  private function __construct(string $table) {
-    $this->table = $table;
-    $this->dbColumns = Columns::for($table);
   }
 
 
@@ -35,7 +24,7 @@ class Insert {
 
     // Add the value to the row if the column exists in the database
     if ($this->dbColumns->has($column)) {
-      Common::checkValue($value, $column);
+      $this->_common->checkValue($value, $column);
       $row[$column] = $value;
     }
 
@@ -93,7 +82,7 @@ class Insert {
     $queryColumns = [];
     foreach ($this->values[0] as $col => $_) {
       $columns[] = $col;
-      $queryColumns[] = Common::quoteWrap($col);
+      $queryColumns[] = $this->_common->quoteWrap($col);
     }
 
     $rows = [];
@@ -104,7 +93,7 @@ class Insert {
         $queryParams[] = $bindBuilder->addValueWithPrefix(
           $value,
           $col,
-          Common::checkValue($value, $col),
+          $this->_common->checkValue($value, $col),
         );
       }
       $rows[] = '(' . implode(', ', $queryParams) . ')';
@@ -113,7 +102,7 @@ class Insert {
     $qColumns = implode(', ', $queryColumns);
     $qRows = implode(', ', $rows);
 
-    $quotedTable = Common::quoteWrap($this->table);
+    $quotedTable = $this->_common->quoteWrap($this->table);
 
     $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES {$qRows};";
 
@@ -156,7 +145,7 @@ class Insert {
       $rowWhere = [];
       foreach ($this->dbColumns->key as $keyColName) {
         if (isset($row[$keyColName])) {
-          $rowWhere[] = Where::equals(
+          $rowWhere[] = $this->_where::equals(
             $keyColName,
             $row[$keyColName],
           );
@@ -164,13 +153,13 @@ class Insert {
       }
 
       if (count($rowWhere) > 0) {
-        $wheres[] = Where::and(...$rowWhere);
+        $wheres[] = $this->_where::and(...$rowWhere);
       }
     }
 
     if (count($wheres) === 0) return;
 
-    $where = Where::or(...$wheres);
+    $where = $this->_where::or(...$wheres);
     $exists = Select::from($this->table)
       ->where($where)
       ->fetchFirst();
