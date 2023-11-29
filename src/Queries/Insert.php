@@ -124,7 +124,7 @@ class Insert {
   public function execute(
     ?PDO $pdo = NULL,
     ?PDOBindBuilder $bindBuilder = NULL,
-  ): bool {
+  ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
 
     // Check if there are collisions
@@ -139,7 +139,10 @@ class Insert {
     $bindBuilder->bindToStatement($pdoStatement);
 
     // Execute query
-    return $pdoStatement->execute();
+    $pdoStatement->execute();
+
+    // Return the number of affected rows
+    return $pdoStatement->rowCount();
   }
 
 

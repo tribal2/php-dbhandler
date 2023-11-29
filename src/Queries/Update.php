@@ -87,7 +87,7 @@ class Update {
   public function execute(
     ?PDO $pdo = NULL,
     ?PDOBindBuilder $bindBuilder = NULL
-  ): bool {
+  ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
@@ -96,7 +96,9 @@ class Update {
     $pdoStatement = $_pdo->prepare($query);
     $bindBuilder->bindToStatement($pdoStatement);
 
-    return $pdoStatement->execute();
+    $pdoStatement->execute();
+
+    return $pdoStatement->rowCount();
   }
 
 

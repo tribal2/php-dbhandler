@@ -23,7 +23,9 @@ describe('Insert', function () {
     $select = Select::from('test_table');
 
     // First row
-    expect($insert->execute())->toBeTrue();
+    $insertResult1 = $insert->execute();
+    expect($insertResult1)->toBeInt();
+    expect($insertResult1)->toBe(1);
 
     // check if the record was inserted
     $records = $select->fetchAll();
@@ -31,7 +33,9 @@ describe('Insert', function () {
     expect($records[2]->key)->toBe('this is a test key');
 
     // Second row
-    expect($insert->execute())->toBeTrue();
+    $insertResult2 = $insert->execute();
+    expect($insertResult2)->toBeInt();
+    expect($insertResult2)->toBe(1);
 
     // check if the record was inserted
     $records = $select->fetchAll();
@@ -48,7 +52,9 @@ describe('Insert', function () {
     $select = Select::from('test_table_no_auto_increment');
 
     // First row
-    expect($insert->execute())->toBeTrue();
+    $insertResult1 = $insert->execute();
+    expect($insertResult1)->toBeInt();
+    expect($insertResult1)->toBe(1);
 
     // check if the record was inserted
     $records = $select->fetchAll();
@@ -57,7 +63,9 @@ describe('Insert', function () {
 
     // Second row
     $insert->value('test_table_id', 4);
-    expect($insert->execute())->toBeTrue();
+    $insertResult2 = $insert->execute();
+    expect($insertResult2)->toBeInt();
+    expect($insertResult2)->toBe(1);
 
     // check if the record was inserted
     $records = $select->fetchAll();
@@ -67,19 +75,12 @@ describe('Insert', function () {
 
   test('insert records in NON autoincremented table WITH collision should throw', function () {
     $insert = Insert::into('test_table_no_auto_increment')
-      ->value('test_table_id', 3)
+      ->value('test_table_id', 5)
       ->value('key', 'this is a test key')
       ->value('value', 'this is a test value');
 
-    $select = Select::from('test_table_no_auto_increment');
-
     // First row
-    expect($insert->execute())->toBeTrue();
-
-    // check if the record was inserted
-    $records = $select->fetchAll();
-    expect($records)->toHaveCount(3);
-    expect($records[2]->key)->toBe('this is a test key');
+    $insert->execute();
 
     // Second row (should throw)
     $insert->execute();

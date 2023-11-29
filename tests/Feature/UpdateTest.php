@@ -24,7 +24,8 @@ describe('Update', function () {
       ->where($where)
       ->execute();
 
-    expect($updateResult)->toBeTrue();
+    expect($updateResult)->toBeInt();
+    expect($updateResult)->toBe(1);
 
     $updatedRow = Select::from('test_table')
       ->where($where)
@@ -39,7 +40,8 @@ describe('Update', function () {
       ->set('value', 'updated value')
       ->execute();
 
-    expect($updateResult)->toBeTrue();
+    expect($updateResult)->toBeInt();
+    expect($updateResult)->toBe(1);
 
     $updatedRows = Select::from('test_table')
       ->where(Where::equals('value', 'updated value'))
