@@ -3,10 +3,11 @@
 namespace Tribal2\DbHandler\Table;
 
 use PDO;
+use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
-class Columns {
+class Columns implements ColumnsInterface {
 
   public string $table;
 
@@ -21,7 +22,7 @@ class Columns {
   }
 
 
-  private function __construct(string $table) {
+  public function __construct(string $table) {
     $this->table = $table;
 
     $dbColumns = $this->fetch();
