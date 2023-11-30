@@ -31,7 +31,7 @@ describe('Insert values', function () {
       'my_table',
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class, [ 'checkValue' => NULL ]),
+      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
       Mockery::mock(WhereFactory::class),
     );
   });
@@ -81,7 +81,7 @@ describe('Insert values', function () {
       'my_table',
       Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
       Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class, [ 'checkValue' => NULL ]),
+      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
       Mockery::mock(WhereFactory::class),
     );
     $values = $insert

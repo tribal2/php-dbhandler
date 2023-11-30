@@ -56,10 +56,10 @@ class Common implements CommonInterface {
    * @return ?int
    */
   public function checkValue(
-    $value,
+    mixed $value,
     ?string $column = NULL,
     array $expectedType = [],
-  ): ?int {
+  ): int {
 
     if (empty($expectedType)) {
       $expectedType = [
@@ -81,7 +81,7 @@ class Common implements CommonInterface {
         if (is_numeric($value))
           return is_int($value + 0)
             ? PDO::PARAM_INT
-            : NULL;
+            : PDO::PARAM_STR;
 
         if (array_search('number', $eTypeStr) !== FALSE) continue;
         $eTypeStr[] = 'number';

@@ -16,7 +16,7 @@ interface CommonInterface {
     $value,
     ?string $column = NULL,
     array $expectedType = [],
-  ): ?int;
+  ): int;
 
 
 }
