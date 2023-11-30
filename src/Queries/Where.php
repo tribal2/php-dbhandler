@@ -20,7 +20,7 @@ class Where implements WhereInterface {
   private CommonInterface $common;
 
 
-  private function __construct(
+  public function __construct(
     string $key,
     mixed $value,
     string $operator = '=',
@@ -98,7 +98,7 @@ class Where implements WhereInterface {
   }
 
 
-  public static function or(Where ...$whereClauses): Where {
+  public static function or(WhereInterface ...$whereClauses): Where {
     return new Where(
       '',
       [
@@ -109,7 +109,7 @@ class Where implements WhereInterface {
   }
 
 
-  public static function and(Where ...$whereClauses): Where {
+  public static function and(WhereInterface ...$whereClauses): Where {
     return new Where(
       '',
       [

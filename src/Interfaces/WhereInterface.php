@@ -2,9 +2,19 @@
 
 namespace Tribal2\DbHandler\Interfaces;
 
+use PDO;
 use Tribal2\DbHandler\PDOBindBuilder;
 
 interface WhereInterface {
+
+
+  public function __construct(
+    string $key,
+    mixed $value,
+    string $operator = '=',
+    int $pdoType = PDO::PARAM_STR,
+    ?CommonInterface $common = NULL,
+  );
 
 
   public function getSql(PDOBindBuilder $bindBuilder): string;
