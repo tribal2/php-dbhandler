@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\Queries\Insert;
 use Tribal2\DbHandler\Queries\Select;
+use Tribal2\DbHandler\Queries\Where;
 
 require_once __DIR__ . '/../Feature/_DbTestSchema.php';
 
@@ -13,7 +14,7 @@ afterAll(function () {
   DbTestSchema::down();
 });
 
-describe('Insert', function () {
+describe('value()', function () {
 
   test('insert records in an autoincremented table', function () {
     $insert = Insert::into('test_table')
@@ -89,5 +90,125 @@ describe('Insert', function () {
     'The values you are trying to insert already exist in the database',
     409,
   );
+
+});
+
+
+describe('values()', function () {
+
+  test('insert records in an autoincremented table', function () {
+    $insert = Insert::into('test_table')
+      ->values([
+        'key' => 'values()',
+        'value' => 'this is a test value',
+      ]);
+
+    $select = Select::from('test_table')
+      ->where(Where::equals('key', 'values()'));
+
+    // First row
+    $insertResult1 = $insert->execute();
+    expect($insertResult1)->toBeInt();
+    expect($insertResult1)->toBe(1);
+
+    // check if the record was inserted
+    $records = $select->fetchAll();
+    expect($records)->toHaveCount(1);
+    expect($records[0]->key)->toBe('values()');
+
+    // Second row
+    $insertResult2 = $insert->execute();
+    expect($insertResult2)->toBeInt();
+    expect($insertResult2)->toBe(1);
+
+    // check if the record was inserted
+    $records = $select->fetchAll();
+    expect($records)->toHaveCount(2);
+    expect($records[1]->key)->toBe('values()');
+  });
+
+  test('insert records in NON autoincremented table without collision', function () {
+    $insert = Insert::into('test_table_no_auto_increment')
+      ->values([
+        'test_table_id' => 333,
+        'key' => 'xxx 333',
+        'value' => 'this is a test value 333',
+      ]);
+
+    $select = Select::from('test_table_no_auto_increment')
+      ->where(Where::like('key', 'xxx%'));
+
+    // First row
+    $insertResult1 = $insert->execute();
+    expect($insertResult1)->toBeInt();
+    expect($insertResult1)->toBe(1);
+
+    // check if the record was inserted
+    $records = $select->fetchAll();
+    expect($records)->toHaveCount(1);
+    expect($records[0]->key)->toBe('xxx 333');
+
+    // Second row
+    $insert->values([
+      'test_table_id' => 444,
+      'key' => 'xxx 444',
+      'value' => 'this is a test value 444',
+    ]);
+    $insertResult2 = $insert->execute();
+    expect($insertResult2)->toBeInt();
+    expect($insertResult2)->toBe(1);
+
+    // check if the record was inserted
+    $records = $select->fetchAll();
+    expect($records)->toHaveCount(2);
+    expect($records[1]->key)->toBe('xxx 444');
+  });
+
+  test('insert records in NON autoincremented table WITH collision should throw', function () {
+    $insert = Insert::into('test_table_no_auto_increment')
+      ->values([
+        'test_table_id' => 555,
+        'key' => 'xxx 555',
+        'value' => 'this is a test value 555',
+      ]);
+
+    // First row
+    $insert->execute();
+
+    // Second row (should throw)
+    $insert->execute();
+  })->throws(
+    Exception::class,
+    'The values you are trying to insert already exist in the database',
+    409,
+  );
+
+});
+
+
+describe('rows()', function () {
+
+  test('insert multiple records in an autoincremented table', function () {
+    $insertResult = Insert::into('test_table')
+      ->rows([
+        ['key' => 'rows() test 1', 'value' => 'test value 1'],
+        ['key' => 'rows() test 2', 'value' => 'test value 2'],
+        ['key' => 'rows() test 3', 'value' => 'test value 3'],
+      ])
+      ->execute();
+
+    // check the number of inserted records
+    expect($insertResult)->toBeInt();
+    expect($insertResult)->toBe(3);
+
+    // check if the actual records were inserted
+    $records = Select::from('test_table')
+      ->where(Where::like('key', 'rows() test%'))
+      ->fetchAll();
+
+    expect($records)->toBeArray();
+    expect($records)->toHaveCount(3);
+    expect($records[2]->key)->toBe('rows() test 3');
+  });
 
 });
