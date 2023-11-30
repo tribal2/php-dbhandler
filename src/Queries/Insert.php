@@ -10,6 +10,7 @@ use Tribal2\DbHandler\PDOSingleton;
 
 class Insert extends ModQueryAbstract {
 
+  // Properties
   private array $values = [ [] ];
 
 
@@ -145,7 +146,7 @@ class Insert extends ModQueryAbstract {
       $rowWhere = [];
       foreach ($this->dbColumns->key as $keyColName) {
         if (isset($row[$keyColName])) {
-          $rowWhere[] = $this->_where::equals(
+          $rowWhere[] = Where::equals(
             $keyColName,
             $row[$keyColName],
           );
@@ -153,13 +154,26 @@ class Insert extends ModQueryAbstract {
       }
 
       if (count($rowWhere) > 0) {
-        $wheres[] = $this->_where::and(...$rowWhere);
+        $wheres[] = $this->_whereFactory->make(
+          '',
+          [ 'whereClauses' => $rowWhere ],
+          'AND',
+          PDO::PARAM_STR,
+          $this->_common,
+        );
       }
     }
 
     if (count($wheres) === 0) return;
 
-    $where = $this->_where::or(...$wheres);
+    // $where = $this->_where::or(...$wheres);
+    $where = $this->_whereFactory->make(
+      '',
+      [ 'whereClauses' => $wheres ],
+      'OR',
+      PDO::PARAM_STR,
+      $this->_common,
+    );
     $exists = Select::from($this->table)
       ->where($where)
       ->fetchFirst();
