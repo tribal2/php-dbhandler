@@ -5,15 +5,15 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use stdClass;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
-class Select {
-
-  private string $table;
+class Select extends QueryAbstract {
 
   /**
    * Columns to select
@@ -33,11 +33,6 @@ class Select {
 
   public static function from(string $table): self {
     return new self($table);
-  }
-
-
-  private function __construct(string $table) {
-    $this->table = $table;
   }
 
 
@@ -97,7 +92,7 @@ class Select {
     string $column,
     OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
   ): self {
-    $quotedCol = Common::quoteWrap($column);
+    $quotedCol = $this->_common->quoteWrap($column);
     $this->orderBy[] = "{$quotedCol} {$direction->value}";
     return $this;
   }
@@ -190,15 +185,15 @@ class Select {
     $queryParts = [
       // SELECT
       'SELECT',
-      empty($this->columns) ? '*' : Common::parseColumns($this->columns),
+      empty($this->columns) ? '*' : $this->_common->parseColumns($this->columns),
       // FROM
-      'FROM ' . Common::quoteWrap($this->table),
+      'FROM ' . $this->_common->quoteWrap($this->table),
       // WHERE
       is_null($this->where)
         ? NULL
         : 'WHERE ' . $this->where->getSql($_bindBuilder),
       // GROUP BY
-      empty($this->groupBy) ? NULL : 'GROUP BY ' . Common::parseColumns($this->groupBy),
+      empty($this->groupBy) ? NULL : 'GROUP BY ' . $this->_common->parseColumns($this->groupBy),
       // HAVING
       is_null($this->having)
         ? NULL
@@ -230,27 +225,31 @@ class Select {
   /**
    * Generate a SELECT query
    *
-   * @param PDOBindBuilder $bindBuilder PDOBindBuilder instance
-   * @param array          $queryArr    Name of the table or array/object with
-   *                                    the following keys:
-   *                                    - table,
-   *                                    - [columns],
-   *                                    - [where],
-   *                                    - [group_by],
-   *                                    - [having],
-   *                                    - [limit],
-   *                                    - [sort]
+   * @param PDOBindBuilder       $bindBuilder PDOBindBuilder instance
+   * @param array                $queryArr    Name of the table or array/object with
+   *                                          the following keys:
+   *                                          - table,
+   *                                          - [columns],
+   *                                          - [where],
+   *                                          - [group_by],
+   *                                          - [having],
+   *                                          - [limit],
+   *                                          - [sort]
+   * @param CommonInterface|null $common      Common instance
    *
    * @return string The generated query
+   * @deprecated Use Select::from instead
    */
   public static function queryFromArray(
     PDOBindBuilder $bindBuilder,
-    array $queryArr
+    array $queryArr,
+    ?CommonInterface $common = NULL,
   ): string {
     $table = $queryArr['table'];
 
     // Configuramos las columnas a obtener
-    $cols = Common::parseColumns($queryArr['columns'] ?? '*');
+    $_common = $common ?? new Common();
+    $cols = $_common->parseColumns($queryArr['columns'] ?? '*');
 
     // Configuramos las cláusulas
     $where = $queryArr['where'] ?? '';
