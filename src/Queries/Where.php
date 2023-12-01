@@ -5,6 +5,7 @@ namespace Tribal2\DbHandler\Queries;
 use PDO;
 use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 
@@ -35,7 +36,7 @@ class Where implements WhereInterface {
   }
 
 
-  public function getSql(PDOBindBuilder $bindBuilder): string {
+  public function getSql(PDOBindBuilderInterface $bindBuilder): string {
     if (is_array($this->value))
       return $this->getSqlForArrayOfValues($bindBuilder);
 
@@ -363,7 +364,7 @@ class Where implements WhereInterface {
    * @return string SQL 'where' clause
    */
   public static function generate(
-    PDOBindBuilder $bindBuilder,
+    PDOBindBuilderInterface $bindBuilder,
     array $where,
     ?CommonInterface $common = NULL,
   ): string {

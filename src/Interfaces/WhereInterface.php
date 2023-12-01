@@ -3,7 +3,6 @@
 namespace Tribal2\DbHandler\Interfaces;
 
 use PDO;
-use Tribal2\DbHandler\PDOBindBuilder;
 
 interface WhereInterface {
 
@@ -17,7 +16,7 @@ interface WhereInterface {
   );
 
 
-  public function getSql(PDOBindBuilder $bindBuilder): string;
+  public function getSql(PDOBindBuilderInterface $bindBuilder): string;
 
 
   public static function or(WhereInterface ...$whereClauses): WhereInterface;
@@ -125,7 +124,7 @@ interface WhereInterface {
 
 
   public static function generate(
-    PDOBindBuilder $bindBuilder,
+    PDOBindBuilderInterface $bindBuilder,
     array $where,
     ?CommonInterface $common = NULL,
   ): string;

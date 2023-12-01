@@ -4,10 +4,11 @@ namespace Tribal2\DbHandler\Factories;
 
 use PDO;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Where;
 
-class WhereFactory {
+class WhereFactory implements WhereFactoryInterface {
 
 
   public function make(

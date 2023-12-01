@@ -24,11 +24,11 @@ describe('SELECT builder', function () {
 describe('SQL', function () {
 
   beforeEach(function () {
-    $mockCommon = Mockery::mock(CommonInterface::class)
-      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)
-      ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')
-      ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')
-      ->getMock();
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock()
+      ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')->getMock()
+      ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')->getMock();
 
     $this->select = new Select(
       'my_table',

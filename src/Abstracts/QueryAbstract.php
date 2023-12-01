@@ -3,9 +3,10 @@
 namespace Tribal2\DbHandler\Abstracts;
 
 use PDO;
-use Tribal2\DbHandler\Factories\WhereFactory;
-use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
+use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Factories\WhereFactory;
 use Tribal2\DbHandler\Queries\Common;
 
 abstract class QueryAbstract {
@@ -16,14 +17,14 @@ abstract class QueryAbstract {
   // Dependencies
   protected PDO $_pdo;
   protected CommonInterface $_common;
-  protected WhereFactory $_whereFactory;
+  protected WhereFactoryInterface $_whereFactory;
 
 
   public function __construct(
     string $table,
     ?PDO $pdo = NULL,
     ?CommonInterface $common = NULL,
-    ?WhereFactory $whereFactory = NULL
+    ?WhereFactoryInterface $whereFactory = NULL
   ) {
     $this->table = $table;
     $this->_pdo = $pdo ?? PDOSingleton::get();
