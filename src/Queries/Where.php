@@ -362,6 +362,7 @@ class Where implements WhereInterface {
    * @param CommonInterface|null $common      Instance of CommonInterface
    *
    * @return string SQL 'where' clause
+   * @deprecated
    */
   public static function generate(
     PDOBindBuilderInterface $bindBuilder,
@@ -409,6 +410,7 @@ class Where implements WhereInterface {
    * @param CommonInterface|null $common      Instance of CommonInterface
    *
    * @return string SQL 'where' clause
+   * @deprecated
    */
   private static function generateComplex(
     PDOBindBuilder $bindBuilder,

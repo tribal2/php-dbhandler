@@ -5,10 +5,12 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\ModQueryAbstract;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
-class Insert extends ModQueryAbstract {
+class Insert extends ModQueryAbstract implements QueryInterface {
 
   // Properties
   private array $values = [ [] ];
@@ -69,7 +71,7 @@ class Insert extends ModQueryAbstract {
   }
 
 
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
     if (count($this->values) === 0) {
       throw new Exception(
         'You must provide at least one value to insert',
@@ -113,7 +115,7 @@ class Insert extends ModQueryAbstract {
 
   public function execute(
     ?PDO $pdo = NULL,
-    ?PDOBindBuilder $bindBuilder = NULL,
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
   ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
 

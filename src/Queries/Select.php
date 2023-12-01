@@ -8,12 +8,15 @@ use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
-class Select extends QueryAbstract {
+class Select extends QueryAbstract implements QueryInterface {
 
   /**
    * Columns to select
@@ -21,9 +24,9 @@ class Select extends QueryAbstract {
    * @var string[]
    */
   private array $columns = [];
-  private ?Where $where = NULL;
+  private ?WhereInterface $where = NULL;
   private array $groupBy = [];
-  private ?Where $having = NULL;
+  private ?WhereInterface $having = NULL;
   private array $orderBy = [];
   private ?int $limit = NULL;
   private ?int $offset = NULL;
@@ -54,7 +57,7 @@ class Select extends QueryAbstract {
   }
 
 
-  public function where(Where $where): self {
+  public function where(WhereInterface $where): self {
     $this->where = $where;
     return $this;
   }
@@ -66,7 +69,7 @@ class Select extends QueryAbstract {
   }
 
 
-  public function having(Where $having): self {
+  public function having(WhereInterface $having): self {
     if (count($this->groupBy) === 0) {
       throw new \Exception('HAVING clause requires GROUP BY clause');
     }
@@ -106,7 +109,7 @@ class Select extends QueryAbstract {
 
   public function execute(
     ?PDO $pdo = NULL,
-    ?PDOBindBuilder $bindBuilder = NULL
+    ?PDOBindBuilderInterface $bindBuilder = NULL
   ): array {
     $_pdo = $pdo ?? PDOSingleton::get();
     $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
@@ -179,7 +182,7 @@ class Select extends QueryAbstract {
   }
 
 
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
     $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
     $queryParts = [
@@ -225,23 +228,23 @@ class Select extends QueryAbstract {
   /**
    * Generate a SELECT query
    *
-   * @param PDOBindBuilder       $bindBuilder PDOBindBuilder instance
-   * @param array                $queryArr    Name of the table or array/object with
-   *                                          the following keys:
-   *                                          - table,
-   *                                          - [columns],
-   *                                          - [where],
-   *                                          - [group_by],
-   *                                          - [having],
-   *                                          - [limit],
-   *                                          - [sort]
-   * @param CommonInterface|null $common      Common instance
+   * @param PDOBindBuilderInterface $bindBuilder PDOBindBuilder instance
+   * @param array                   $queryArr    Name of the table or array/object with
+   *                                             the following keys:
+   *                                             - table,
+   *                                             - [columns],
+   *                                             - [where],
+   *                                             - [group_by],
+   *                                             - [having],
+   *                                             - [limit],
+   *                                             - [sort]
+   * @param CommonInterface|null    $common      Common instance
    *
    * @return string The generated query
    * @deprecated Use Select::from instead
    */
   public static function queryFromArray(
-    PDOBindBuilder $bindBuilder,
+    PDOBindBuilderInterface $bindBuilder,
     array $queryArr,
     ?CommonInterface $common = NULL,
   ): string {

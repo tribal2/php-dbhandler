@@ -6,11 +6,12 @@ use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\ModQueryAbstract;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
-class Update extends ModQueryAbstract {
+class Update extends ModQueryAbstract implements QueryInterface {
 
   private array $values = [];
   private ?WhereInterface $whereClause = NULL;

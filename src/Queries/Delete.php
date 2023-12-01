@@ -6,11 +6,12 @@ use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
-class Delete extends QueryAbstract {
+class Delete extends QueryAbstract implements QueryInterface {
 
   private ?WhereInterface $whereClause = NULL;
 
