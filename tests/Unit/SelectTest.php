@@ -1,10 +1,10 @@
 <?php
 
-use Tribal2\DbHandler\Factories\WhereFactory;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
-use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Select;
-use Tribal2\DbHandler\Queries\Where;
 
 describe('SELECT builder', function () {
 
@@ -13,7 +13,7 @@ describe('SELECT builder', function () {
       'my_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
     expect($select)->toBeInstanceOf(Select::class);
   });
@@ -24,26 +24,24 @@ describe('SELECT builder', function () {
 describe('SQL', function () {
 
   beforeEach(function () {
-    $mockCommon = Mockery::mock(CommonInterface::class);
-    $mockCommon
-      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock()
-      ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')->getMock()
-      ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')->getMock();
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+      'parseColumns' => '<COLUMNS>',
+    ]);
 
     $this->select = new Select(
       'my_table',
       Mockery::mock(PDO::class),
       $mockCommon,
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
 
-    $this->mockBindBuilder = Mockery::mock(PDOBindBuilder::class)
-      ->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_VALUE>')
-      ->getMock();
+    $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class, [
+      'addValueWithPrefix' => '<BINDED_VALUE>',
+    ]);
 
-    $this->mockWhere = Mockery::mock(Where::class)
-      ->shouldReceive('getSql')->andReturn('<WHERE>')
-      ->getMock();
+    $this->mockWhere = Mockery::mock(WhereInterface::class, ['getSql' => '<WHERE>']);
   });
 
   test('all columns from a table', function () {

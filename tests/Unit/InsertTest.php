@@ -1,9 +1,9 @@
 <?php
 
-use Tribal2\DbHandler\Factories\WhereFactory;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
-use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Queries\Insert;
 
 
@@ -15,7 +15,7 @@ describe('Builder', function () {
       Mockery::mock(ColumnsInterface::class),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
 
     expect($insert)->toBeInstanceOf(Insert::class);
@@ -32,7 +32,7 @@ describe('Insert values', function () {
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
   });
 
@@ -82,7 +82,7 @@ describe('Insert values', function () {
       Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
     $values = $insert
       ->value('column1', 'value1')
@@ -101,7 +101,7 @@ describe('Insert values', function () {
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockedCommon,
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
     $insert->value('value', [ 1, 2, 3 ]);
   })->throws(Exception::class);
@@ -132,24 +132,23 @@ describe('Insert values', function () {
 describe('SQL', function () {
 
   beforeEach(function () {
-    $mockCommon = Mockery::mock(CommonInterface::class)
-      ->shouldReceive('quoteWrap')->with('test_table')->andReturn('`test_table`')
-      ->shouldReceive('quoteWrap')->with('key')->andReturn('`key`')
-      ->shouldReceive('quoteWrap')->with('value')->andReturn('`value`')
-      ->shouldReceive('quoteWrap')->with('created_at')->andReturn('`created_at`')
-      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)
-      ->getMock();
-
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('quoteWrap')->with('test_table')->andReturn('`test_table`')->getMock()
+      ->shouldReceive('quoteWrap')->with('key')->andReturn('`key`')->getMock()
+      ->shouldReceive('quoteWrap')->with('value')->andReturn('`value`')->getMock()
+      ->shouldReceive('quoteWrap')->with('created_at')->andReturn('`created_at`')->getMock()
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock();
 
     $this->insert = new Insert(
       'test_table',
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockCommon,
-      Mockery::mock(WhereFactory::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
 
-    $this->mockBindBuilder = Mockery::mock(PDOBindBuilder::class)
+    $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)
       ->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_VALUE>')
       ->getMock();
   });

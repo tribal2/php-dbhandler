@@ -1,4 +1,5 @@
 <?php
+
 use Tribal2\DbHandler\DbConfig;
 
 describe('DbConfig', function () {
