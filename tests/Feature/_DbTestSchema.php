@@ -84,11 +84,13 @@ class DbTestSchema {
 
     $query = "
       CREATE PROCEDURE `get_test_rows`(
-        IN keyInput VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+        IN keyInput VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+        IN valueInput VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
       )
       BEGIN
         SET keyInput = CONCAT('%', keyInput, '%');
-        SELECT * FROM test_table WHERE `key` LIKE keyInput;
+        SET valueInput = CONCAT('%', valueInput, '%');
+        SELECT * FROM test_table WHERE `key` LIKE keyInput OR `value` LIKE valueInput;
       END;
     ";
     $sth = $pdo->prepare($query);
