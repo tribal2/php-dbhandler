@@ -4,28 +4,20 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
-
+use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
-use Tribal2\DbHandler\Queries\Common;
-use Tribal2\DbHandler\Queries\Where;
-use Tribal2\DbHandler\Table\Columns;
 
-class Insert {
+class Insert extends QueryModAbstract implements QueryInterface {
 
-  private string $table;
-  private Columns $dbColumns;
+  // Properties
   private array $values = [ [] ];
 
 
   public static function into(string $table): self {
     return new self($table);
-  }
-
-
-  private function __construct(string $table) {
-    $this->table = $table;
-    $this->dbColumns = Columns::for($table);
   }
 
 
@@ -35,7 +27,7 @@ class Insert {
 
     // Add the value to the row if the column exists in the database
     if ($this->dbColumns->has($column)) {
-      Common::checkValue($value, $column);
+      $this->_common->checkValue($value, $column);
       $row[$column] = $value;
     }
 
@@ -79,7 +71,7 @@ class Insert {
   }
 
 
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
     if (count($this->values) === 0) {
       throw new Exception(
         'You must provide at least one value to insert',
@@ -93,7 +85,7 @@ class Insert {
     $queryColumns = [];
     foreach ($this->values[0] as $col => $_) {
       $columns[] = $col;
-      $queryColumns[] = Common::quoteWrap($col);
+      $queryColumns[] = $this->_common->quoteWrap($col);
     }
 
     $rows = [];
@@ -104,7 +96,7 @@ class Insert {
         $queryParams[] = $bindBuilder->addValueWithPrefix(
           $value,
           $col,
-          Common::checkValue($value, $col),
+          $this->_common->checkValue($value, $col),
         );
       }
       $rows[] = '(' . implode(', ', $queryParams) . ')';
@@ -113,7 +105,7 @@ class Insert {
     $qColumns = implode(', ', $queryColumns);
     $qRows = implode(', ', $rows);
 
-    $quotedTable = Common::quoteWrap($this->table);
+    $quotedTable = $this->_common->quoteWrap($this->table);
 
     $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES {$qRows};";
 
@@ -123,7 +115,7 @@ class Insert {
 
   public function execute(
     ?PDO $pdo = NULL,
-    ?PDOBindBuilder $bindBuilder = NULL,
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
   ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
 
@@ -164,13 +156,26 @@ class Insert {
       }
 
       if (count($rowWhere) > 0) {
-        $wheres[] = Where::and(...$rowWhere);
+        $wheres[] = $this->_whereFactory->make(
+          '',
+          [ 'whereClauses' => $rowWhere ],
+          'AND',
+          PDO::PARAM_STR,
+          $this->_common,
+        );
       }
     }
 
     if (count($wheres) === 0) return;
 
-    $where = Where::or(...$wheres);
+    // $where = $this->_where::or(...$wheres);
+    $where = $this->_whereFactory->make(
+      '',
+      [ 'whereClauses' => $wheres ],
+      'OR',
+      PDO::PARAM_STR,
+      $this->_common,
+    );
     $exists = Select::from($this->table)
       ->where($where)
       ->fetchFirst();

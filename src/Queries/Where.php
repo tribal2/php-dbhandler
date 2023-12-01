@@ -4,29 +4,48 @@ namespace Tribal2\DbHandler\Queries;
 
 use PDO;
 use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 
-class Where {
+class Where implements WhereInterface {
+
+  // Instance variables
+  private string $key;
+  private mixed $value;
+  private string $operator = '=';
+  private int $pdoType = PDO::PARAM_STR;
+
+  // Dependencies
+  private CommonInterface $common;
 
 
-  private function __construct(
-    private string $key,
-    private $value,
-    private string $operator = '=',
-    private ?int $pdoType = NULL,
-  ) {}
+  public function __construct(
+    string $key,
+    mixed $value,
+    string $operator = '=',
+    int $pdoType = PDO::PARAM_STR,
+    ?CommonInterface $common = NULL,
+  ) {
+    $this->key = $key;
+    $this->value = $value;
+    $this->operator = $operator;
+    $this->pdoType = $pdoType;
+    $this->common = $common ?? new Common();
+  }
 
 
-  public function getSql(PDOBindBuilder $bindBuilder): string {
+  public function getSql(PDOBindBuilderInterface $bindBuilder): string {
     if (is_array($this->value))
       return $this->getSqlForArrayOfValues($bindBuilder);
 
-    $column = Common::quoteWrap($this->key);
+    $column = $this->common->quoteWrap($this->key);
 
     $valuePlaceholder = $bindBuilder->addValueWithPrefix(
       $this->value,
       $this->key,
-      $this->pdoType ?? PDO::PARAM_STR,
+      $this->pdoType,
     );
 
     return "{$column} {$this->operator} {$valuePlaceholder}";
@@ -34,17 +53,19 @@ class Where {
 
 
   private function getSqlForArrayOfValues(PDOBindBuilder $bindBuilder): string {
+    // For OR and AND operators
     if ($this->key === '' && isset($this->value['whereClauses']))
       return $this->getSqlForArrayOfWhereClauses($bindBuilder);
 
-    $column = Common::quoteWrap($this->key);
+    // For IN, NOT IN, BETWEEN, NOT BETWEEN operators
+    $column = $this->common->quoteWrap($this->key);
 
     $valuePlaceholders = [];
     foreach ($this->value as $value) {
       $valuePlaceholders[] = $bindBuilder->addValueWithPrefix(
         $value,
         $this->key,
-        $this->pdoType ?? PDO::PARAM_STR,
+        $this->pdoType,
       );
     }
 
@@ -61,6 +82,9 @@ class Where {
 
 
   private function getSqlForArrayOfWhereClauses(PDOBindBuilder $bindBuilder): string {
+    /**
+     * @var Where[] $whereClauses
+     */
     $whereClauses = $this->value['whereClauses'];
 
     $sqlArr = [];
@@ -75,7 +99,7 @@ class Where {
   }
 
 
-  public static function or(Where ...$whereClauses): Where {
+  public static function or(WhereInterface ...$whereClauses): Where {
     return new Where(
       '',
       [
@@ -86,7 +110,7 @@ class Where {
   }
 
 
-  public static function and(Where ...$whereClauses): Where {
+  public static function and(WhereInterface ...$whereClauses): Where {
     return new Where(
       '',
       [
@@ -97,160 +121,263 @@ class Where {
   }
 
 
-  public static function equals(string $key, $value): Where {
-    if (is_array($value)) return self::in($key, $value);
+  public static function equals(
+    string $key,
+    mixed $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
 
-    $pdoType = Common::checkValue($value, $key, [
+    if (is_array($value)) return self::in($key, $value, $common);
+
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
       SqlValueTypeEnum::BOOLEAN,
     ]);
-    return new Where($key, $value, '=', $pdoType);
+    return new Where($key, $value, '=', $pdoType, $common);
   }
 
 
-  public static function notEquals(string $key, $value): Where {
-    if (is_array($value)) return self::notIn($key, $value);
+  public static function notEquals(
+    string $key,
+    mixed $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
 
-    $pdoType = Common::checkValue($value, $key, [
+    if (is_array($value)) return self::notIn($key, $value, $common);
+
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
       SqlValueTypeEnum::BOOLEAN,
     ]);
-    return new Where($key, $value, '<>', $pdoType);
+    return new Where($key, $value, '<>', $pdoType, $common);
   }
 
 
-  public static function greaterThan(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function greaterThan(
+    string $key,
+    mixed $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
     ]);
-    return new Where($key, $value, '>', $pdoType);
+    return new Where($key, $value, '>', $pdoType, $common);
   }
 
 
-  public static function greaterThanOrEquals(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function greaterThanOrEquals(
+    string $key,
+    $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
     ]);
-    return new Where($key, $value, '>=', $pdoType);
+    return new Where($key, $value, '>=', $pdoType, $common);
   }
 
 
-  public static function lessThan(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function lessThan(
+    string $key,
+    $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
     ]);
-    return new Where($key, $value, '<', $pdoType);
+    return new Where($key, $value, '<', $pdoType, $common);
   }
 
 
-  public static function lessThanOrEquals(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function lessThanOrEquals(
+    string $key,
+    $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
     ]);
-    return new Where($key, $value, '<=', $pdoType);
+    return new Where($key, $value, '<=', $pdoType, $common);
   }
 
 
-  public static function like(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function like(
+    string $key,
+    string $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
     ]);
-    return new Where($key, $value, 'LIKE', $pdoType);
+    return new Where($key, $value, 'LIKE', $pdoType, $common);
   }
 
 
-  public static function notLike(string $key, $value): Where {
-    $pdoType = Common::checkValue($value, $key, [
+  public static function notLike(
+    string $key,
+    string $value,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
     ]);
-    return new Where($key, $value, 'NOT LIKE', $pdoType);
+    return new Where($key, $value, 'NOT LIKE', $pdoType, $common);
   }
 
 
-  public static function in(string $key, array $values): Where {
+  public static function in(
+    string $key,
+    array $values,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+
     foreach ($values as $value) {
-      Common::checkValue($value, $key, [
+      $common->checkValue($value, $key, [
         SqlValueTypeEnum::STRING,
         SqlValueTypeEnum::FLOAT,
         SqlValueTypeEnum::INTEGER,
         SqlValueTypeEnum::BOOLEAN,
       ]);
     }
-    return new Where($key, $values, 'IN');
+    return new Where($key, $values, 'IN', PDO::PARAM_STR, $common);
   }
 
 
-  public static function notIn(string $key, array $values): Where {
+  public static function notIn(
+    string $key,
+    array $values,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+
     foreach ($values as $value) {
-      Common::checkValue($value, $key, [
+      $common->checkValue($value, $key, [
         SqlValueTypeEnum::STRING,
         SqlValueTypeEnum::FLOAT,
         SqlValueTypeEnum::INTEGER,
         SqlValueTypeEnum::BOOLEAN,
       ]);
     }
-    return new Where($key, $values, 'NOT IN');
+    return new Where($key, $values, 'NOT IN', PDO::PARAM_STR, $common);
   }
 
 
-  public static function between(string $key, $value1, $value2): Where {
+  public static function between(
+    string $key,
+    int|float $value1,
+    int|float $value2,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+
     foreach ([ $value1, $value2 ] as $value) {
-      Common::checkValue($value, $key, [
+      $common->checkValue($value, $key, [
         SqlValueTypeEnum::FLOAT,
         SqlValueTypeEnum::INTEGER,
       ]);
     }
-    return new Where($key, [ $value1, $value2 ], 'BETWEEN');
+    return new Where(
+      $key,
+      [ $value1, $value2 ],
+      'BETWEEN',
+      PDO::PARAM_STR,
+      $common,
+    );
   }
 
 
-  public static function notBetween(string $key, $value1, $value2): Where {
+  public static function notBetween(
+    string $key,
+    int|float $value1,
+    int|float $value2,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    $common = $common ?? new Common();
+
     foreach ([ $value1, $value2 ] as $value) {
-      Common::checkValue($value, $key, [
+      $common->checkValue($value, $key, [
         SqlValueTypeEnum::FLOAT,
         SqlValueTypeEnum::INTEGER,
       ]);
     }
-    return new Where($key, [ $value1, $value2 ], 'NOT BETWEEN');
+    return new Where(
+      $key,
+      [ $value1, $value2 ],
+      'NOT BETWEEN',
+      PDO::PARAM_STR,
+      $common,
+    );
   }
 
 
-  public static function isNull(string $key): Where {
-    return new Where($key, 'NULL', 'IS', PDO::PARAM_NULL);
+  public static function isNull(
+    string $key,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    return new Where(
+      $key,
+      'NULL',
+      'IS',
+      PDO::PARAM_NULL,
+      $common ?? new Common(),
+    );
   }
 
 
-  public static function isNotNull(string $key): Where {
-    return new Where($key, 'NULL', 'IS NOT', PDO::PARAM_NULL);
+  public static function isNotNull(
+    string $key,
+    ?CommonInterface $common = NULL,
+  ): Where {
+    return new Where(
+      $key,
+      'NULL',
+      'IS NOT',
+      PDO::PARAM_NULL,
+      $common ?? new Common(),
+    );
   }
 
 
   /**
    * Generate a SQL 'where' clause from an array of conditions
-   * @param PDOBindBuilder $bindBuilder Instance of PDOBindBuilder
-   * @param array          $where       Array of conditions
+   * @param PDOBindBuilder       $bindBuilder Instance of PDOBindBuilder
+   * @param array                $where       Array of conditions
+   * @param CommonInterface|null $common      Instance of CommonInterface
    *
    * @return string SQL 'where' clause
+   * @deprecated
    */
   public static function generate(
-    PDOBindBuilder $bindBuilder,
+    PDOBindBuilderInterface $bindBuilder,
     array $where,
+    ?CommonInterface $common = NULL,
   ): string {
+    $common = $common ?? new Common();
+
     $whereArr = [];
     foreach($where as $key => $val) {
-      $_key = Common::quoteWrap($key);
+      $_key = $common->quoteWrap($key);
 
       // Varias opciones para un sólo campo ==> OR
       if (is_array($val) && !array_key_exists('operator', $val)) {
-        $whereArr[] = self::generateComplex($bindBuilder, $key, $val);
+        $whereArr[] = self::generateComplex($bindBuilder, $key, $val, $common);
         continue;
       }
 
@@ -277,18 +404,23 @@ class Where {
   /**
    * Generate a complex SQL 'where' for a single column
    *
-   * @param PDOBindBuilder $bindBuilder Instance of PDOBindBuilder
-   * @param string         $key         Name of the column
-   * @param array          $valueArr    Array of conditions
+   * @param PDOBindBuilder       $bindBuilder Instance of PDOBindBuilder
+   * @param string               $key         Name of the column
+   * @param array                $valueArr    Array of conditions
+   * @param CommonInterface|null $common      Instance of CommonInterface
    *
    * @return string SQL 'where' clause
+   * @deprecated
    */
   private static function generateComplex(
     PDOBindBuilder $bindBuilder,
     string $key,
     array $valueArr,
+    ?CommonInterface $common = NULL,
   ): string {
-    $_key = Common::quoteWrap($key);
+    $common = $common ?? new Common();
+
+    $_key = $common->quoteWrap($key);
 
     $whereArr = [];
 
@@ -299,7 +431,7 @@ class Where {
       // Si el elemento no es otro array..
       if (!is_array($valValue)) {
         $orClause[] = is_null($valValue)
-          ? "{$_key} IS NULL"
+          ? "{$_key} IS " . $bindBuilder->addValue($valValue, PDO::PARAM_NULL)
           : "{$_key} LIKE " . $bindBuilder->addValue($valValue);
 
         continue;

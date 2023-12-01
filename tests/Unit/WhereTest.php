@@ -2,21 +2,29 @@
 
 use Tribal2\DbHandler\Queries\Where;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Queries\Common;
 
 describe('Where::getSql()', function () {
 
   beforeEach(function() {
-    $this->bindBuilder = new PDOBindBuilder();
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $mockedCommon->shouldReceive('quoteWrap')->andReturn('`column`');
+    $this->mockedCommon = $mockedCommon;
+
+    $mockedBindBuilder = Mockery::mock(PDOBindBuilder::class);
+    $mockedBindBuilder->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_PLACEHOLDER>');
+    $this->bindBuilder = $mockedBindBuilder;
   });
 
   test('equals creates a correct WhereClause', function () {
-    $clause = Where::equals('column', 'value');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` = :column___1");
+    $clause = Where::equals('column', 'value', $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))->toEqual("`column` = <BINDED_PLACEHOLDER>");
   });
 
   test('notEquals creates a correct WhereClause', function () {
-    $clause = Where::notEquals('column', 'value');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` <> :column___1");
+    $clause = Where::notEquals('column', 'value', $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))->toEqual("`column` <> <BINDED_PLACEHOLDER>");
   });
 
   test('equals/notEquals with an array of values', function () {
@@ -27,28 +35,29 @@ describe('Where::getSql()', function () {
     ];
 
     // EQUALS
-    $clauseEqStr = Where::equals('column', $values)
+    $clauseEqStr = Where::equals('column', $values, $this->mockedCommon)
       ->getSql($this->bindBuilder);
 
-    $expectedIn = "(:column___1, :column___2, :column___3)";
-    expect($clauseEqStr)->toEqual("`column` IN {$expectedIn}");
+    $expected = "(<BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>)";
+    expect($clauseEqStr)->toEqual("`column` IN {$expected}");
 
     // NOT EQUALS
-    $clauseNotEqStr = Where::notEquals('column', $values)
+    $clauseNotEqStr = Where::notEquals('column', $values, $this->mockedCommon)
       ->getSql($this->bindBuilder);
 
-    $expectedNotIn = "(:column___4, :column___5, :column___6)";
-    expect($clauseNotEqStr)->toEqual("`column` NOT IN {$expectedNotIn}");
+    expect($clauseNotEqStr)->toEqual("`column` NOT IN {$expected}");
   });
 
   test('isNull creates a correct WhereClause', function () {
-    $clause = Where::isNull('column');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS :column___1");
+    $clause = Where::isNull('column', $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` IS <BINDED_PLACEHOLDER>");
   });
 
   test('isNotNull creates a correct WhereClause', function () {
-    $clause = Where::isNotNull('column');
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IS NOT :column___1");
+    $clause = Where::isNotNull('column', $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` IS NOT <BINDED_PLACEHOLDER>");
   });
 
 });
@@ -57,23 +66,34 @@ describe('Where::getSql()', function () {
 describe('Where::getSqlForArrayOfValues()', function () {
 
   beforeEach(function() {
-    $this->bindBuilder = new PDOBindBuilder();
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $mockedCommon->shouldReceive('quoteWrap')->andReturn('`column`');
+    $this->mockedCommon = $mockedCommon;
+
+    $mockedBindBuilder = Mockery::mock(PDOBindBuilder::class);
+    $mockedBindBuilder->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_PLACEHOLDER>');
+    $this->bindBuilder = $mockedBindBuilder;
   });
 
   test('in creates a correct WhereClause for an array of values', function () {
-    $clause = Where::in('column', ['value1', 'value2']);
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` IN (:column___1, :column___2)");
+    $clause = Where::in('column', ['value1', 'value2'], $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` IN (<BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>)");
 
-    $clause2 = Where::notIn('column', ['value1', 'value2']);
-    expect($clause2->getSql($this->bindBuilder))->toEqual("`column` NOT IN (:column___3, :column___4)");
+    $clause2 = Where::notIn('column', ['value1', 'value2'], $this->mockedCommon);
+    expect($clause2->getSql($this->bindBuilder))
+      ->toEqual("`column` NOT IN (<BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>)");
   });
 
   test('between creates a correct WhereClause for range values', function () {
-    $clause = Where::between('column', 10, 20);
-    expect($clause->getSql($this->bindBuilder))->toEqual("`column` BETWEEN :column___1 AND :column___2");
+    $clause = Where::between('column', 10, 20, $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` BETWEEN <BINDED_PLACEHOLDER> AND <BINDED_PLACEHOLDER>");
 
-    $clause2 = Where::notBetween('column', 10, 20);
-    expect($clause2->getSql($this->bindBuilder))->toEqual("`column` NOT BETWEEN :column___3 AND :column___4");
+    $clause2 = Where::notBetween('column', 10, 20, $this->mockedCommon);
+    expect($clause2->getSql($this->bindBuilder))
+      ->toEqual("`column` NOT BETWEEN <BINDED_PLACEHOLDER> AND <BINDED_PLACEHOLDER>");
   });
 
 });
@@ -82,125 +102,120 @@ describe('Where::getSqlForArrayOfValues()', function () {
 describe('Where::getSqlForArrayOfWhereClauses()', function () {
 
   beforeEach(function() {
-    $this->bindBuilder = new PDOBindBuilder();
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $this->mockedCommon = $mockedCommon;
+
+    $mockedBindBuilder = Mockery::mock(PDOBindBuilder::class);
+    $mockedBindBuilder->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_PLACEHOLDER>');
+    $this->bindBuilder = $mockedBindBuilder;
   });
 
   test('AND and getSql', function () {
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column1')->andReturn('`column1`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column2')->andReturn('`column2`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column3')->andReturn('`column3`');
+
     $clauseAnd = Where::and(
-      Where::equals('column1', 'value1'),
-      Where::greaterThan('column2', 1),
-      Where::lessThanOrEquals('column3', 2),
+      Where::equals('column1', 'value1', $this->mockedCommon),
+      Where::greaterThan('column2', 1, $this->mockedCommon),
+      Where::lessThanOrEquals('column3', 2, $this->mockedCommon),
     );
 
     $expectedSql = ""
       . "("
-      .   "`column1` = :column1___1"
+      .   "`column1` = <BINDED_PLACEHOLDER>"
       .   " AND "
-      .   "`column2` > :column2___1"
+      .   "`column2` > <BINDED_PLACEHOLDER>"
       .   " AND "
-      .   "`column3` <= :column3___1"
+      .   "`column3` <= <BINDED_PLACEHOLDER>"
       . ")";
 
     expect($clauseAnd->getSql($this->bindBuilder))->toEqual($expectedSql);
   });
 
   test('OR and getSqlForArrayOfValues', function () {
+    $this->mockedCommon->shouldReceive('quoteWrap')->andReturn('`column`');
+
     $clauseOr = Where::or(
-      Where::in('column', ['value1', 'value2']),
-      Where::notIn('column', ['value3', 'value4']),
+      Where::in('column', ['value1', 'value2'], $this->mockedCommon),
+      Where::notIn('column', ['value3', 'value4'], $this->mockedCommon),
     );
 
     $expectedSql = ""
       . "("
-      .   "`column` IN (:column___1, :column___2)"
+      .   "`column` IN (<BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>)"
       .   " OR "
-      .   "`column` NOT IN (:column___3, :column___4)"
+      .   "`column` NOT IN (<BINDED_PLACEHOLDER>, <BINDED_PLACEHOLDER>)"
       . ")";
     expect($clauseOr->getSql($this->bindBuilder))->toEqual($expectedSql);
   });
 
   test('mix of AND / OR', function () {
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column1')->andReturn('`column1`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column2')->andReturn('`column2`');
+
     $clauseOr = Where::or(
       Where::and(
-        Where::greaterThan('column1', 1),
-        Where::lessThanOrEquals('column1', 5),
+        Where::greaterThan('column1', 1, $this->mockedCommon),
+        Where::lessThanOrEquals('column1', 5, $this->mockedCommon),
       ),
       Where::and(
-        Where::greaterThan('column2', 1),
-        Where::lessThanOrEquals('column2', 5),
+        Where::greaterThan('column2', 1, $this->mockedCommon),
+        Where::lessThanOrEquals('column2', 5, $this->mockedCommon),
       ),
     );
 
     $expectedSql = ""
       . "("
       .   "("
-      .     "`column1` > :column1___1"
+      .     "`column1` > <BINDED_PLACEHOLDER>"
       .     " AND "
-      .     "`column1` <= :column1___2"
+      .     "`column1` <= <BINDED_PLACEHOLDER>"
       .   ")"
       .   " OR "
       .   "("
-      .     "`column2` > :column2___1"
+      .     "`column2` > <BINDED_PLACEHOLDER>"
       .     " AND "
-      .     "`column2` <= :column2___2"
+      .     "`column2` <= <BINDED_PLACEHOLDER>"
       .   ")"
       . ")";
     expect($clauseOr->getSql($this->bindBuilder))->toEqual($expectedSql);
   });
 
   test('nested ANDs', function () {
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column1')->andReturn('`column1`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column2')->andReturn('`column2`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column3')->andReturn('`column3`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column4')->andReturn('`column4`');
+
     $clauseAnd = Where::and(
-      Where::equals('column1', 'value1'),
+      Where::equals('column1', 'value1', $this->mockedCommon),
       Where::and(
-        Where::greaterThan('column2', 1),
+        Where::greaterThan('column2', 1, $this->mockedCommon),
         Where::and(
-          Where::lessThanOrEquals('column3', 2),
-          Where::equals('column4', 'value4'),
+          Where::lessThanOrEquals('column3', 2, $this->mockedCommon),
+          Where::equals('column4', 'value4', $this->mockedCommon),
         ),
       ),
     );
 
     $expectedSql = ""
       . "("
-      .   "`column1` = :column1___1"
+      .   "`column1` = <BINDED_PLACEHOLDER>"
       .   " AND "
       .   "("
-      .     "`column2` > :column2___1"
+      .     "`column2` > <BINDED_PLACEHOLDER>"
       .     " AND "
       .     "("
-      .       "`column3` <= :column3___1"
+      .       "`column3` <= <BINDED_PLACEHOLDER>"
       .       " AND "
-      .       "`column4` = :column4___1"
+      .       "`column4` = <BINDED_PLACEHOLDER>"
       .     ")"
       .   ")"
       . ")";
 
     expect($clauseAnd->getSql($this->bindBuilder))->toEqual($expectedSql);
-  });
-
-});
-
-
-describe('Where::verify sql after binding values', function () {
-
-  beforeEach(function() {
-    $this->bindBuilder = new PDOBindBuilder();
-  });
-
-  test('numeric values', function () {
-    $clause = Where::in('column', [100, 200]);
-    $sql = $clause->getSql($this->bindBuilder);
-
-    expect($sql)->toEqual("`column` IN (:column___1, :column___2)");
-    expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IN (100, 200)");
-  });
-
-  test('string values', function () {
-    $clause = Where::in('column', ['first', 'second']);
-    $sql = $clause->getSql($this->bindBuilder);
-
-    expect($sql)->toEqual("`column` IN (:column___1, :column___2)");
-    expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IN ('first', 'second')");
   });
 
 });
@@ -231,46 +246,45 @@ describe('Where::validateOperator()', function () {
 
 });
 
+
 describe('Where::generateComplex()', function () {
 
-  $generateComplex = function ($bindBuilder, $key, $valueArr) {
+  $generateComplex = function ($key, $valueArr) {
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $mockedCommon->shouldReceive('quoteWrap')->andReturn('`column`');
+
+    $mockedBindBuilder = Mockery::mock(PDOBindBuilder::class);
+    $mockedBindBuilder->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_PLACEHOLDER>');
+    $mockedBindBuilder->shouldReceive('addValue')->andReturn('<BINDED_PLACEHOLDER>');
+
     $reflection = new ReflectionClass(Where::class);
     $method = $reflection->getMethod('generateComplex');
     $method->setAccessible(TRUE);
 
-    return $method->invoke(NULL, $bindBuilder, $key, $valueArr, $method);
+    return $method->invoke(NULL, $mockedBindBuilder, $key, $valueArr, $mockedCommon);
   };
 
   test('generates simple OR clause', function() use ($generateComplex) {
-    $bindBuilder = new PDOBindBuilder();
-    $key = 'column_name';
+    $key = 'column';
     $valueArr = ['value1', 'value2'];
 
-    $clause = $generateComplex($bindBuilder, $key, $valueArr);
+    $clause = $generateComplex($key, $valueArr);
 
-    expect($clause)->toBe("(`column_name` LIKE :placeholder___1 OR `column_name` LIKE :placeholder___2)");
-
-    $binds = $bindBuilder->getValues();
-    expect($binds[':placeholder___1']['value'])->toBe('value1');
-    expect($binds[':placeholder___2']['value'])->toBe('value2');
+    expect($clause)->toBe("(`column` LIKE <BINDED_PLACEHOLDER> OR `column` LIKE <BINDED_PLACEHOLDER>)");
   });
 
   test('generates OR clause with NULL', function() use ($generateComplex) {
-      $bindBuilder = new PDOBindBuilder();
-      $key = 'column_name';
+      $key = 'column';
       $valueArr = [NULL, 'value2'];
 
-      $clause = $generateComplex($bindBuilder, $key, $valueArr);
+      $clause = $generateComplex($key, $valueArr);
 
-      expect($clause)->toBe("(`column_name` IS NULL OR `column_name` LIKE :placeholder___1)");
-
-      $binds = $bindBuilder->getValues();
-      expect($binds[':placeholder___1']['value'])->toBe('value2');
+      expect($clause)->toBe("(`column` IS <BINDED_PLACEHOLDER> OR `column` LIKE <BINDED_PLACEHOLDER>)");
   });
 
   test('generates complex AND and OR clauses', function() use ($generateComplex) {
-      $bindBuilder = new PDOBindBuilder();
-      $key = 'column_name';
+      $key = 'column';
       $valueArr = [
           ['operator' => '>', 'value' => 1, 'and' => TRUE],
           ['operator' => '<', 'value' => 2, 'and' => TRUE],
@@ -278,124 +292,122 @@ describe('Where::generateComplex()', function () {
           ['operator' => '=', 'value' => 4],
       ];
 
-      $clause = $generateComplex($bindBuilder, $key, $valueArr);
+      $clause = $generateComplex($key, $valueArr);
 
       $expected = ""
-        . "(`column_name` = :placeholder___3 OR `column_name` = :placeholder___4) "
-        . "AND (`column_name` > :placeholder___1 AND `column_name` < :placeholder___2)";
+        . "(`column` = <BINDED_PLACEHOLDER> OR `column` = <BINDED_PLACEHOLDER>) "
+        . "AND (`column` > <BINDED_PLACEHOLDER> AND `column` < <BINDED_PLACEHOLDER>)";
 
       expect($clause)->toBe($expected);
-
-      $binds = $bindBuilder->getValues();
-      expect($binds[':placeholder___1']['value'])->toBe(1);
-      expect($binds[':placeholder___2']['value'])->toBe(2);
-      expect($binds[':placeholder___3']['value'])->toBe(3);
-      expect($binds[':placeholder___4']['value'])->toBe(4);
   });
 
   test('throws an exception for invalid operator', function() use ($generateComplex) {
-      $bindBuilder = new PDOBindBuilder();
-      $key = 'column_name';
+      $key = 'column';
       $valueArr = [
           ['operator' => 'INVALID_OPERATOR', 'value' => 5]
       ];
 
-      $generateComplex($bindBuilder, $key, $valueArr);
+      $generateComplex($key, $valueArr);
   })->throws(Exception::class);
 
 });
 
 describe('Where::generate()', function () {
 
+  beforeEach(function() {
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $this->mockedCommon = $mockedCommon;
+
+    $mockedBindBuilder = Mockery::mock(PDOBindBuilder::class);
+    $mockedBindBuilder->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_PLACEHOLDER>');
+    $mockedBindBuilder->shouldReceive('addValue')->andReturn('<BINDED_PLACEHOLDER>');
+    $this->bindBuilder = $mockedBindBuilder;
+  });
+
   test('generates simple WHERE clause for single condition', function() {
-    $bindBuilder = new PDOBindBuilder();
-    $where = ['column_name' => 'value1'];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column')->andReturn('`column`');
 
-    $clause = Where::generate($bindBuilder, $where);
+    $where = ['column' => 'value1'];
 
-    expect($clause)->toBe("`column_name` LIKE :placeholder___1");
-    $binds = $bindBuilder->getValues();
-    expect($binds[':placeholder___1']['value'])->toBe('value1');
+    $clause = Where::generate($this->bindBuilder, $where, $this->mockedCommon);
+
+    expect($clause)->toBe("`column` LIKE <BINDED_PLACEHOLDER>");
   });
 
   test('generates WHERE clause for multiple conditions', function() {
-      $bindBuilder = new PDOBindBuilder();
-      $where = [
-          'column_name1' => 'value1',
-          'column_name2' => 'value2'
-      ];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column1')->andReturn('`column1`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column2')->andReturn('`column2`');
 
-      $clause = Where::generate($bindBuilder, $where);
+    $where = [
+      'column1' => 'value1',
+      'column2' => 'value2'
+    ];
 
-      $expect = "`column_name1` LIKE :placeholder___1 AND "
-       . "`column_name2` LIKE :placeholder___2";
+    $clause = Where::generate($this->bindBuilder, $where, $this->mockedCommon);
 
-      expect($clause)->toBe($expect);
-      $binds = $bindBuilder->getValues();
-      expect($binds[':placeholder___1']['value'])->toBe('value1');
-      expect($binds[':placeholder___2']['value'])->toBe('value2');
+    $expect = "`column1` LIKE <BINDED_PLACEHOLDER> AND "
+      . "`column2` LIKE <BINDED_PLACEHOLDER>";
+
+    expect($clause)->toBe($expect);
   });
 
   test('generates WHERE clause for NULL value', function() {
-      $bindBuilder = new PDOBindBuilder();
-      $where = ['column_name' => NULL];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column')->andReturn('`column`');
 
-      $clause = Where::generate($bindBuilder, $where);
+    $where = ['column' => NULL];
+    $clause = Where::generate($this->bindBuilder, $where, $this->mockedCommon);
 
-      expect($clause)->toBe("`column_name` IS NULL");
+    expect($clause)->toBe("`column` IS NULL");
   });
 
   test('generates WHERE clause with custom operator', function() {
-      $bindBuilder = new PDOBindBuilder();
-      $where = [
-          'column_name' => [
-              'operator' => '>',
-              'value' => 5
-          ]
-      ];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column')->andReturn('`column`');
 
-      $clause = Where::generate($bindBuilder, $where);
+    $where = [
+      'column' => [
+        'operator' => '>',
+        'value' => 5
+      ]
+    ];
 
-      expect($clause)->toBe("`column_name` > :placeholder___1");
-      $binds = $bindBuilder->getValues();
-      expect($binds[':placeholder___1']['value'])->toBe(5);
+    $clause = Where::generate($this->bindBuilder, $where, $this->mockedCommon);
+
+    expect($clause)->toBe("`column` > <BINDED_PLACEHOLDER>");
   });
 
   test('generates complex WHERE clause with multiple conditions', function() {
-      $bindBuilder = new PDOBindBuilder();
-      $where = [
-          'column_name1' => ['value1', 'value2'],
-          'column_name2' => [
-              ['operator' => '>', 'value' => 5],
-              ['operator' => '<', 'value' => 10]
-          ]
-      ];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column1')->andReturn('`column1`');
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column2')->andReturn('`column2`');
 
-      $clause = Where::generate($bindBuilder, $where);
+    $where = [
+      'column1' => ['value1', 'value2'],
+      'column2' => [
+        ['operator' => '>', 'value' => 5],
+        ['operator' => '<', 'value' => 10]
+      ]
+    ];
 
-      $expect = ''
-        . "("
-        .   "`column_name1` LIKE :placeholder___1 "
-        .   "OR `column_name1` LIKE :placeholder___2"
-        . ") AND ("
-        .   "`column_name2` > :placeholder___3 "
-        .   "OR `column_name2` < :placeholder___4"
-        . ")";
+    $clause = Where::generate($this->bindBuilder, $where, $this->mockedCommon);
 
-      expect($clause)->toBe($expect);
-      $binds = $bindBuilder->getValues();
-      expect($binds[':placeholder___1']['value'])->toBe('value1');
-      expect($binds[':placeholder___2']['value'])->toBe('value2');
-      expect($binds[':placeholder___3']['value'])->toBe(5);
-      expect($binds[':placeholder___4']['value'])->toBe(10);
+    $expect = ''
+      . "("
+      .   "`column1` LIKE <BINDED_PLACEHOLDER> "
+      .   "OR `column1` LIKE <BINDED_PLACEHOLDER>"
+      . ") AND ("
+      .   "`column2` > <BINDED_PLACEHOLDER> "
+      .   "OR `column2` < <BINDED_PLACEHOLDER>"
+      . ")";
+
+    expect($clause)->toBe($expect);
   });
 
   test('throws an exception for invalid operator', function() {
-      $bindBuilder = new PDOBindBuilder();
-      $where = ['column_name' => ['operator' => 'INVALID_OPERATOR', 'value' => 5]];
+    $this->mockedCommon->shouldReceive('quoteWrap')->with('column')->andReturn('`column`');
 
-      Where::generate($bindBuilder, $where);
+    $where = ['column' => ['operator' => 'INVALID_OPERATOR', 'value' => 5]];
 
+    Where::generate($this->bindBuilder, $where, $this->mockedCommon);
   })->throws(Exception::class);
 
 });

@@ -5,17 +5,18 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use stdClass;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
 
-class Select {
-
-  private PDOBindBuilder $bindBuilder;
-
-  private string $table;
+class Select extends QueryAbstract implements QueryInterface {
 
   /**
    * Columns to select
@@ -23,29 +24,18 @@ class Select {
    * @var string[]
    */
   private array $columns = [];
-
-  private ?Where $where = NULL;
-
+  private ?WhereInterface $where = NULL;
   private array $groupBy = [];
-
-  private ?Where $having = NULL;
-
+  private ?WhereInterface $having = NULL;
   private array $orderBy = [];
-
-  private string $limit = '';
-  private string $offset = '';
+  private ?int $limit = NULL;
+  private ?int $offset = NULL;
 
   private int $fetchMethod = PDO::FETCH_OBJ;
 
 
   public static function from(string $table): self {
     return new self($table);
-  }
-
-
-  private function __construct(string $table) {
-    $this->table = $table;
-    $this->bindBuilder = new PDOBindBuilder();
   }
 
 
@@ -67,7 +57,7 @@ class Select {
   }
 
 
-  public function where(Where $where): self {
+  public function where(WhereInterface $where): self {
     $this->where = $where;
     return $this;
   }
@@ -79,7 +69,7 @@ class Select {
   }
 
 
-  public function having(Where $having): self {
+  public function having(WhereInterface $having): self {
     if (count($this->groupBy) === 0) {
       throw new \Exception('HAVING clause requires GROUP BY clause');
     }
@@ -90,25 +80,13 @@ class Select {
 
 
   public function limit(int $limit): self {
-    $limitPlaceHolder = $this->bindBuilder->addValueWithPrefix(
-      $limit,
-      'limit',
-      PDO::PARAM_INT
-    );
-
-    $this->limit = "LIMIT {$limitPlaceHolder}";
+    $this->limit = $limit;
     return $this;
   }
 
 
   public function offset(int $offset): self {
-    $offsetPlaceHolder = $this->bindBuilder->addValueWithPrefix(
-      $offset,
-      'offset',
-      PDO::PARAM_INT
-    );
-
-    $this->offset = "OFFSET {$offsetPlaceHolder}";
+    $this->offset = $offset;
     return $this;
   }
 
@@ -117,7 +95,7 @@ class Select {
     string $column,
     OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
   ): self {
-    $quotedCol = Common::quoteWrap($column);
+    $quotedCol = $this->_common->quoteWrap($column);
     $this->orderBy[] = "{$quotedCol} {$direction->value}";
     return $this;
   }
@@ -129,14 +107,18 @@ class Select {
   }
 
 
-  public function execute(?PDO $pdo = NULL): array {
+  public function execute(
+    ?PDO $pdo = NULL,
+    ?PDOBindBuilderInterface $bindBuilder = NULL
+  ): array {
     $_pdo = $pdo ?? PDOSingleton::get();
+    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
-    $query = $this->getSql();
+    $query = $this->getSql($_bindBuilder);
     $pdoStatement = $_pdo->prepare($query);
 
     // Bind values
-    $this->bindBuilder->bindToStatement($pdoStatement);
+    $_bindBuilder->bindToStatement($pdoStatement);
 
     // Execute query
     $pdoStatement->execute();
@@ -200,31 +182,43 @@ class Select {
   }
 
 
-  public function getSql(): string {
-    $quotedTable = Common::quoteWrap($this->table);
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
+    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
     $queryParts = [
       // SELECT
       'SELECT',
-      empty($this->columns) ? '*' : Common::parseColumns($this->columns),
+      empty($this->columns) ? '*' : $this->_common->parseColumns($this->columns),
       // FROM
-      "FROM {$quotedTable}",
+      'FROM ' . $this->_common->quoteWrap($this->table),
       // WHERE
       is_null($this->where)
-        ? ''
-        : 'WHERE ' . $this->where->getSql($this->bindBuilder),
+        ? NULL
+        : 'WHERE ' . $this->where->getSql($_bindBuilder),
       // GROUP BY
-      empty($this->groupBy) ? '' : 'GROUP BY ' . Common::parseColumns($this->groupBy),
+      empty($this->groupBy) ? NULL : 'GROUP BY ' . $this->_common->parseColumns($this->groupBy),
       // HAVING
       is_null($this->having)
-        ? ''
-        : 'HAVING ' . $this->having->getSql($this->bindBuilder),
+        ? NULL
+        : 'HAVING ' . $this->having->getSql($_bindBuilder),
       // ORDER BY
       empty($this->orderBy) ? '' : 'ORDER BY ' . implode(', ', $this->orderBy),
       // LIMIT
-      $this->limit,
+      is_null($this->limit)
+        ? NULL
+        : 'LIMIT ' . $_bindBuilder->addValueWithPrefix(
+          $this->limit,
+          'limit',
+          PDO::PARAM_INT
+        ),
       // OFFSET
-      $this->offset,
+      is_null($this->offset)
+        ? NULL
+        : 'OFFSET ' . $_bindBuilder->addValueWithPrefix(
+          $this->offset,
+          'offset',
+          PDO::PARAM_INT
+        ),
     ];
 
     return implode(' ', array_filter($queryParts)) . ';';
@@ -234,27 +228,31 @@ class Select {
   /**
    * Generate a SELECT query
    *
-   * @param PDOBindBuilder $bindBuilder PDOBindBuilder instance
-   * @param array          $queryArr    Name of the table or array/object with
-   *                                    the following keys:
-   *                                    - table,
-   *                                    - [columns],
-   *                                    - [where],
-   *                                    - [group_by],
-   *                                    - [having],
-   *                                    - [limit],
-   *                                    - [sort]
+   * @param PDOBindBuilderInterface $bindBuilder PDOBindBuilder instance
+   * @param array                   $queryArr    Name of the table or array/object with
+   *                                             the following keys:
+   *                                             - table,
+   *                                             - [columns],
+   *                                             - [where],
+   *                                             - [group_by],
+   *                                             - [having],
+   *                                             - [limit],
+   *                                             - [sort]
+   * @param CommonInterface|null    $common      Common instance
    *
    * @return string The generated query
+   * @deprecated Use Select::from instead
    */
   public static function queryFromArray(
-    PDOBindBuilder $bindBuilder,
-    array $queryArr
+    PDOBindBuilderInterface $bindBuilder,
+    array $queryArr,
+    ?CommonInterface $common = NULL,
   ): string {
     $table = $queryArr['table'];
 
     // Configuramos las columnas a obtener
-    $cols = Common::parseColumns($queryArr['columns'] ?? '*');
+    $_common = $common ?? new Common();
+    $cols = $_common->parseColumns($queryArr['columns'] ?? '*');
 
     // Configuramos las cláusulas
     $where = $queryArr['where'] ?? '';

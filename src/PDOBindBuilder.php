@@ -4,9 +4,9 @@ namespace Tribal2\DbHandler;
 
 use PDO, PDOStatement, Exception;
 use PdoDebugger;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 
-
-class PDOBindBuilder {
+class PDOBindBuilder implements PDOBindBuilderInterface {
 
   private array $data = [];
   private array $prefixCounter = [];
@@ -21,7 +21,7 @@ class PDOBindBuilder {
    *
    * @return string The generated PDO named parameter.
    */
-  public function addValue($value, int $type = PDO::PARAM_STR) {
+  public function addValue($value, int $type = PDO::PARAM_STR): string {
     $this->checkType($type);
 
     $placeholder = $this->phPrefix . (count($this->data) + 1);
@@ -48,7 +48,7 @@ class PDOBindBuilder {
     $value,
     string $prefix,
     int $type = PDO::PARAM_STR,
-  ) {
+  ): string {
     $this->checkType($type);
 
     // Remove non-alphanumeric characters from prefix

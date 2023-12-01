@@ -1,45 +1,53 @@
 <?php
 
-use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Delete;
-use Tribal2\DbHandler\Queries\Where;
-
-require_once __DIR__ . '/../Feature/_DbTestSchema.php';
-
-beforeAll(function () {
-  DbTestSchema::up();
-});
-
-afterAll(function () {
-  DbTestSchema::down();
-});
 
 
 describe('Delete Builder', function () {
 
   test('static factory', function () {
-    expect(Delete::from('my_table'))->toBeInstanceOf(Delete::class);
+    $delete = new Delete(
+      'test_table',
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
+      Mockery::mock(WhereFactoryInterface::class),
+    );
+    expect($delete)->toBeInstanceOf(Delete::class);
   });
 
 });
 
 
-describe('Delete SQL Generation', function () {
+describe('SQL Generation', function () {
 
   test('getSql() generates correct SQL query', function () {
-    $bindBuilder = new PDOBindBuilder();
+    $mockWhere = Mockery::mock(WhereInterface::class, [ 'getSql' => '<WHERE>' ]);
+    $mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class, [
+      'addValueWithPrefix' => '<BINDED_VALUE>',
+    ]);
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+    ]);
 
-    $delete = Delete::from('test_table')
-      ->where(Where::equals('key', 'keyValue'));
+    $delete = new Delete(
+      'test_table',
+      Mockery::mock(PDO::class),
+      $mockCommon,
+      Mockery::mock(WhereFactoryInterface::class),
+    );
 
-    $sql = $delete->getSql($bindBuilder);
-    $expectedSql = 'DELETE FROM `test_table` WHERE `key` = :key___1;';
+    $sql = $delete
+      ->where($mockWhere)
+      ->getSql($mockBindBuilder);
+    $expectedSql = 'DELETE FROM <WRAPPED_VALUE> WHERE <WHERE>;';
 
     expect($sql)->toBeString();
     expect($sql)->toBe($expectedSql);
-
-    $expectedSqlWithValues = "DELETE FROM `test_table` WHERE `key` = 'keyValue';";
-    expect($bindBuilder->debugQuery($sql))->toBe($expectedSqlWithValues);
   });
 
 });

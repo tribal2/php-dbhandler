@@ -4,28 +4,21 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
+use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
-use Tribal2\DbHandler\Queries\Common;
-use Tribal2\DbHandler\Queries\Where;
-use Tribal2\DbHandler\Table\Columns;
 
-class Update {
+class Update extends QueryModAbstract implements QueryInterface {
 
-  private string $table;
   private array $values = [];
-  private Columns $dbColumns;
-  private ?Where $whereClause = NULL;
+  private ?WhereInterface $whereClause = NULL;
 
 
   public static function table(string $table): self {
     return new self($table);
-  }
-
-
-  private function __construct(string $table) {
-    $this->table = $table;
-    $this->dbColumns = Columns::for($table);
   }
 
 
@@ -35,7 +28,7 @@ class Update {
       throw new Exception($eMsg, 400);
     }
 
-    Common::checkValue($value, $column);
+    $this->_common->checkValue($value, $column);
 
     $this->values[$column] = $value;
 
@@ -43,13 +36,13 @@ class Update {
   }
 
 
-  public function where(Where $where): self {
+  public function where(WhereInterface $where): self {
     $this->whereClause = $where;
     return $this;
   }
 
 
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
     if (empty($this->values)) {
       throw new Exception('No values provided for update', 400);
     }
@@ -59,11 +52,11 @@ class Update {
     $setParts = [];
     foreach ($this->values as $col => $value) {
       $parts = [
-        Common::quoteWrap($col),
+        $this->_common->quoteWrap($col),
         $bindBuilder->addValueWithPrefix(
           $value,
           $col,
-          Common::checkValue($value, $col),
+          $this->_common->checkValue($value, $col),
         ),
       ];
 
@@ -72,7 +65,7 @@ class Update {
 
     $queryArr = [
       'UPDATE',
-      Common::quoteWrap($this->table),
+      $this->_common->quoteWrap($this->table),
       'SET',
       implode(', ', $setParts),
       $this->whereClause
@@ -86,7 +79,7 @@ class Update {
 
   public function execute(
     ?PDO $pdo = NULL,
-    ?PDOBindBuilder $bindBuilder = NULL
+    ?PDOBindBuilderInterface $bindBuilder = NULL
   ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();

@@ -4,16 +4,16 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
-use Tribal2\DbHandler\Queries\Common;
-use Tribal2\DbHandler\Queries\Where;
 
-class Delete
-{
+class Delete extends QueryAbstract implements QueryInterface {
 
-  private string $table;
-  private ?Where $whereClause = NULL;
+  private ?WhereInterface $whereClause = NULL;
 
 
   public static function from(string $table): self {
@@ -21,25 +21,20 @@ class Delete
   }
 
 
-  private function __construct(string $table) {
-    $this->table = $table;
-  }
-
-
-  public function where(Where $where): self {
+  public function where(WhereInterface $where): self {
     $this->whereClause = $where;
     return $this;
   }
 
 
-  public function getSql(?PDOBindBuilder $bindBuilder = NULL): string {
+  public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
     if ($this->whereClause === NULL) {
       throw new Exception('A WHERE clause is required for DELETE operations', 400);
     }
 
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
-    $quotedTable = Common::quoteWrap($this->table);
+    $quotedTable = $this->_common->quoteWrap($this->table);
     $whereSql = $this->whereClause->getSql($bindBuilder);
 
     $query = "DELETE FROM {$quotedTable} WHERE {$whereSql};";
@@ -50,7 +45,7 @@ class Delete
 
   public function execute(
     ?PDO $pdo = NULL,
-    ?PDOBindBuilder $bindBuilder = NULL,
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
   ): int {
     $_pdo = $pdo ?? PDOSingleton::get();
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
