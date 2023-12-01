@@ -1,23 +1,24 @@
 <?php
 
-use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
+use Tribal2\DbHandler\Interfaces\ColumnsInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Update;
-use Tribal2\DbHandler\Queries\Where;
-
-require_once __DIR__ . '/../Feature/_DbTestSchema.php';
-
-beforeAll(function () {
-  DbTestSchema::up();
-});
-
-afterAll(function () {
-  DbTestSchema::down();
-});
 
 describe('Update Builder', function () {
 
   test('static factory', function () {
-    expect(Update::table('my_table'))->toBeInstanceOf(Update::class);
+    $update = new Update(
+      'my_table',
+      Mockery::mock(ColumnsInterface::class),
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
+      Mockery::mock(WhereFactoryInterface::class),
+    );
+
+    expect($update)->toBeInstanceOf(Update::class);
   });
 
 });
@@ -26,8 +27,15 @@ describe('Update Builder', function () {
 describe('set()', function () {
 
   test('should throw on invalid column name', function () {
-    Update::table('test_table')
-      ->set('invalid_key', 'updated_key');
+    $update = new Update(
+      'test_table',
+      Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
+      Mockery::mock(WhereFactoryInterface::class),
+    );
+
+    $update->set('invalid_key', 'updated_key');
   })->throws(
     Exception::class,
     // Column '{$column}' does not exist in table '{$this->table}'
@@ -36,12 +44,24 @@ describe('set()', function () {
   );
 
   test('should throw on invalid value type', function () {
-    Update::table('test_table')
-      ->set('key', [ 'updated_key' ]);
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('checkValue')
+      ->andThrows(Exception::class, '<ERROR_MESSAGE>', 500)
+      ->getMock();
+
+    $update = new Update(
+      'test_table',
+      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+      Mockery::mock(PDO::class),
+      $mockCommon,
+      Mockery::mock(WhereFactoryInterface::class),
+    );
+
+    $update->set('key', [ 'updated_key' ]);
   })->throws(
     Exception::class,
-    "The value to write in the database must be string or number or NULL or "
-      . "boolean. The value entered for 'key' is of type 'array'.",
+    '<ERROR_MESSAGE>',
     500,
   );
 
@@ -50,57 +70,76 @@ describe('set()', function () {
 
 describe('SQL', function () {
 
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock()
+      ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')->getMock()
+      ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')->getMock();
+
+    $this->update = new Update(
+      'test_table',
+      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+      Mockery::mock(PDO::class),
+      $mockCommon,
+      Mockery::mock(WhereFactoryInterface::class),
+    );
+
+    $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)
+      ->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_VALUE>')
+      ->getMock();
+
+    $this->mockWhere = Mockery::mock(WhereInterface::class)
+      ->shouldReceive('getSql')->andReturn('<WHERE>')
+      ->getMock();
+  });
+
   test('update a single value', function () {
-    $bindBuilder = new PDOBindBuilder();
-
-    $updateSql = Update::table('test_table')
+    $updateSql = $this->update
       ->set('key', 'value1')
-      ->getSql($bindBuilder);
+      ->getSql($this->mockBindBuilder);
 
-    $expectedSql = 'UPDATE `test_table` SET `key` = :key___1;';
+      $expectedSql = ''
+      . 'UPDATE <WRAPPED_VALUE> '
+      . 'SET '
+      .   '<WRAPPED_VALUE> = <BINDED_VALUE>;';
 
     expect($updateSql)->toBeString();
     expect($updateSql)->toBe($expectedSql);
-
-    $expectedSqlWithValues = "UPDATE `test_table` SET `key` = 'value1';";
-
-    expect($bindBuilder->debugQuery($updateSql))->toBe($expectedSqlWithValues);
   });
 
   test('update multiple values of different type', function () {
-    $bindBuilder = new PDOBindBuilder();
-
-    $updateSql = Update::table('test_table')
+    $updateSql = $this->update
       ->set('key', 'updated_key')
       ->set('value', 123)
-      ->getSql($bindBuilder);
+      ->getSql($this->mockBindBuilder);
 
-    $expectedSql = 'UPDATE `test_table` SET `key` = :key___1, `value` = :value___1;';
+    $expectedSql = ''
+      . 'UPDATE <WRAPPED_VALUE> '
+      . 'SET '
+      .   '<WRAPPED_VALUE> = <BINDED_VALUE>, '
+      .   '<WRAPPED_VALUE> = <BINDED_VALUE>;';
 
     expect($updateSql)->toBeString();
     expect($updateSql)->toBe($expectedSql);
-
-    $expectedSqlWithValues = "UPDATE `test_table` SET `key` = 'updated_key', `value` = 123;";
-
-    expect($bindBuilder->debugQuery($updateSql))->toBe($expectedSqlWithValues);
   });
 
   test('single value with WHERE clause', function () {
-    $bindBuilder = new PDOBindBuilder();
-
-    $updateSql = Update::table('test_table')
+    $updateSql = $this->update
       ->set('key', 'updated_key')
-      ->where(Where::equals('test_table_id', 1))
-      ->getSql($bindBuilder);
+      ->set('value', 123)
+      ->where($this->mockWhere)
+      ->getSql($this->mockBindBuilder);
 
-    $expectedSql = 'UPDATE `test_table` SET `key` = :key___1 WHERE `test_table_id` = :test_table_id___1;';
+      $expectedSql = ''
+      . 'UPDATE <WRAPPED_VALUE> '
+      . 'SET '
+      .   '<WRAPPED_VALUE> = <BINDED_VALUE>, '
+      .   '<WRAPPED_VALUE> = <BINDED_VALUE> '
+      . 'WHERE <WHERE>;';
 
     expect($updateSql)->toBeString();
     expect($updateSql)->toBe($expectedSql);
-
-    $expectedSqlWithValues = "UPDATE `test_table` SET `key` = 'updated_key' WHERE `test_table_id` = 1;";
-
-    expect($bindBuilder->debugQuery($updateSql))->toBe($expectedSqlWithValues);
   });
 
 });
