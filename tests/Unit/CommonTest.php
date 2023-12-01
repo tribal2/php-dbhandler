@@ -5,17 +5,21 @@ use Tribal2\DbHandler\Queries\Common;
 
 describe('quoteWrap()', function () {
 
+  beforeEach(function () {
+    $this->common = new Common();
+  });
+
   test('wraps non-function column names with backticks', function () {
     $columnName = 'column_name';
     $expected = '`column_name`';
-    $result = Common::quoteWrap($columnName);
+    $result = $this->common->quoteWrap($columnName);
 
     expect($result)->toBe($expected);
   });
 
   test('does not wrap function-like column names with backticks', function () {
     $columnName = 'COUNT(*)';
-    $result = Common::quoteWrap($columnName);
+    $result = $this->common->quoteWrap($columnName);
 
     expect($result)->toBe($columnName);
   });
@@ -24,11 +28,15 @@ describe('quoteWrap()', function () {
 
 describe('parseColumns()', function () {
 
+  beforeEach(function () {
+    $this->common = new Common();
+  });
+
   test('returns single quoted column name when passed a string', function () {
     $column = 'username';
     $expected = '`username`';
 
-    $result = Common::parseColumns($column);
+    $result = $this->common->parseColumns($column);
     expect($result)->toBe($expected);
   });
 
@@ -36,7 +44,7 @@ describe('parseColumns()', function () {
     $column = 'username, password';
     $expected = '`username`, `password`';
 
-    $result = Common::parseColumns($column);
+    $result = $this->common->parseColumns($column);
     expect($result)->toBe($expected);
   });
 
@@ -44,7 +52,7 @@ describe('parseColumns()', function () {
     $columns = ['username', 'email'];
     $expected = '`username`, `email`';
 
-    $result = Common::parseColumns($columns);
+    $result = $this->common->parseColumns($columns);
 
     expect($result)->toBe($expected);
   });
@@ -53,7 +61,7 @@ describe('parseColumns()', function () {
     $columns = ['COUNT(*)', 'username'];
     $expected = 'COUNT(*), `username`';
 
-    $result = Common::parseColumns($columns);
+    $result = $this->common->parseColumns($columns);
 
     expect($result)->toBe($expected);
   });
@@ -62,59 +70,63 @@ describe('parseColumns()', function () {
 
 describe('checkValue()', function () {
 
+  beforeEach(function () {
+    $this->common = new Common();
+  });
+
   test('should return PDO::PARAM_INT when a integer or numeric integer is provided', function() {
-    $res = Common::checkValue('12345', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+    $res = $this->common->checkValue('12345', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
     expect($res)->toBe(PDO::PARAM_INT);
 
-    $res2 = Common::checkValue(12345);
+    $res2 = $this->common->checkValue(12345);
     expect($res2)->toBe(PDO::PARAM_INT);
   });
 
-  test('should return NULL when a float or numeric float is provided', function() {
-    $res = Common::checkValue('123.45', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
-    expect($res)->toBeNull();
+  test('should return PDO::PARAM_STR when a float or numeric float is provided', function() {
+    $res = $this->common->checkValue('123.45', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+    expect($res)->toBe(PDO::PARAM_STR);
 
-    $res = Common::checkValue(123.45);
-    expect($res)->toBeNull();
+    $res = $this->common->checkValue(123.45);
+    expect($res)->toBe(PDO::PARAM_STR);
   });
 
   test('should return PDO::PARAM_BOOL when a boolean is provided', function() {
-    $res = Common::checkValue(TRUE, 'column_name', [ SqlValueTypeEnum::BOOLEAN ]);
+    $res = $this->common->checkValue(TRUE, 'column_name', [ SqlValueTypeEnum::BOOLEAN ]);
     expect($res)->toBe(PDO::PARAM_BOOL);
 
-    $res = Common::checkValue(FALSE);
+    $res = $this->common->checkValue(FALSE);
     expect($res)->toBe(PDO::PARAM_BOOL);
   });
 
   test('should return PDO::STR when a non-numerique string is provided', function() {
-    $res = Common::checkValue('TRUE', 'column_name', [ SqlValueTypeEnum::STRING ]);
+    $res = $this->common->checkValue('TRUE', 'column_name', [ SqlValueTypeEnum::STRING ]);
     expect($res)->toBe(PDO::PARAM_STR);
 
-    $res = Common::checkValue('I am a string');
+    $res = $this->common->checkValue('I am a string');
     expect($res)->toBe(PDO::PARAM_STR);
   });
 
   test('does not throw an exception when setting a string value', function() {
-    Common::checkValue('some_value', 'column_name');
+    $this->common->checkValue('some_value', 'column_name');
   })->throwsNoExceptions();
 
   test('does not throw an exception when setting a numeric value', function() {
-    Common::checkValue(123, 'column_name');
+    $this->common->checkValue(123, 'column_name');
   })->throwsNoExceptions();
 
   test('throws an exception when trying to set an array value', function() {
-    Common::checkValue(['some', 'value']);
+    $this->common->checkValue(['some', 'value']);
 
   })->throws(Exception::class, NULL, 500);
 
   test('throws an exception when trying to set an object value', function() {
     $obj = new stdClass();
-    Common::checkValue($obj);
+    $this->common->checkValue($obj);
 
   })->throws(Exception::class, NULL, 500);
 
   test('throws an exception when trying to set a string and a numeric value is expected', function() {
-    Common::checkValue('not_a_number', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
+    $this->common->checkValue('not_a_number', 'column_name', [ SqlValueTypeEnum::INTEGER ]);
   })->throws(
     Exception::class,
     "The value to write in the database must be number. The value entered for 'column_name' is of type 'string'.",
