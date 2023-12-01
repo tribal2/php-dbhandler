@@ -12,11 +12,17 @@ use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Queries\Common;
-use Tribal2\DbHandler\Schema;
+use Tribal2\DbHandler\Queries\Schema;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
 use Tribal2\DbHandler\Table\Columns;
 
+/**
+ * Class to handle database operations
+ *
+ * @package Tribal2\DbHandler
+ * @deprecated Use Tribal2\DbHandler\Queries instead
+ */
 class DbHandler {
 
   private static $instances = [];

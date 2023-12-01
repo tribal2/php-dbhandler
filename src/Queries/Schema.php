@@ -1,6 +1,6 @@
 <?php
 
-namespace Tribal2\DbHandler;
+namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;

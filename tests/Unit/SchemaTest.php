@@ -1,11 +1,7 @@
 <?php
 
-use Mockery\Mock;
-use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
-use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
-use Tribal2\DbHandler\Interfaces\WhereInterface;
-use Tribal2\DbHandler\Schema;
+use Tribal2\DbHandler\Queries\Schema;
 
 describe('Class', function () {
 

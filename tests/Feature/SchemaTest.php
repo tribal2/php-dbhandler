@@ -1,6 +1,6 @@
 <?php
 
-use Tribal2\DbHandler\Schema;
+use Tribal2\DbHandler\Queries\Schema;
 
 require_once __DIR__ . '/_DbTestSchema.php';
 
@@ -15,8 +15,11 @@ afterAll(function () {
 
 describe('Schema', function () {
 
-  test('checkIfTableExists()', function () {
+  test('checkIfTableExists() - should return TRUE', function () {
     expect(Schema::checkIfTableExists('test_table'))->toBe(TRUE);
+  });
+
+  test('checkIfTableExists() - should return FALSE', function () {
     expect(Schema::checkIfTableExists('test_tablex'))->toBe(FALSE);
   });
 
