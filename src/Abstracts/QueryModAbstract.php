@@ -8,7 +8,7 @@ use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Table\Columns;
 
-abstract class ModQueryAbstract extends QueryAbstract {
+abstract class QueryModAbstract extends QueryAbstract {
 
   // Properties
   protected ColumnsInterface $dbColumns;

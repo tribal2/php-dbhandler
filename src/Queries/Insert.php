@@ -4,13 +4,13 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
-use Tribal2\DbHandler\Abstracts\ModQueryAbstract;
+use Tribal2\DbHandler\Abstracts\QueryModAbstract;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
-class Insert extends ModQueryAbstract implements QueryInterface {
+class Insert extends QueryModAbstract implements QueryInterface {
 
   // Properties
   private array $values = [ [] ];
