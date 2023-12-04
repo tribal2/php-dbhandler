@@ -65,7 +65,7 @@ class StoredProcedure implements QueryInterface {
     $setArguments = [];
 
     foreach ($this->params as $param) {
-      if (property_exists($param, 'value')) {
+      if ($param->hasValue()) {
         $setArguments[$param->name] = $param->value;
       }
     }
