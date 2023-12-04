@@ -36,18 +36,30 @@ describe('Exceptions', function () {
 describe('getArguments()', function () {
 
   it('should return an array of provided (and validated arguments)', function () {
-    $args = StoredProcedure::call('get_test_rows')
-      ->with('keyInput', '123')
-      ->getArguments();
+    $sp = StoredProcedure::call('get_test_rows');
 
-    expect($args)
+    $args1 = $sp->with('keyInput', '123')->getArguments();
+
+    expect($args1)
       ->toBeArray()
       ->toHaveCount(1)
       ->toHaveKey('keyInput');
 
-    expect($args['keyInput'])
+    expect($args1['keyInput'])
       ->toBeString()
       ->toBe('123');
+
+    // Test with multiple arguments
+    $args2 = $sp->with('valueInput', '456')->getArguments();
+
+    expect($args2)
+      ->toBeArray()
+      ->toHaveCount(2)
+      ->toHaveKeys(['keyInput', 'valueInput']);
+
+    expect($args2['valueInput'])
+      ->toBeString()
+      ->toBe('456');
   });
 
 });
@@ -60,17 +72,18 @@ describe('SQL', function () {
 
     $sql = StoredProcedure::call('get_test_rows')
       ->with('keyInput', '123')
+      ->with('valueInput', '%')
       ->getSql($bindBuilder);
 
     expect($sql)
       ->toBeString()
-      ->toBe('CALL get_test_rows(:keyInput___1);');
+      ->toBe('CALL get_test_rows(:keyInput___1, :valueInput___1);');
 
     $sqlWithValues = $bindBuilder->debugQuery($sql);
 
     expect($sqlWithValues)
       ->toBeString()
-      ->toBe("CALL get_test_rows('123');");
+      ->toBe("CALL get_test_rows('123', '%');");
   });
 
 });
@@ -81,6 +94,7 @@ describe('Results', function () {
   it('should return empty array if no value found', function () {
     $results = StoredProcedure::call('get_test_rows')
       ->with('keyInput', '123')
+      ->with('valueInput', 'fff')
       ->execute();
 
     expect($results)
@@ -91,6 +105,7 @@ describe('Results', function () {
   it('should return array of objects', function () {
     $results = StoredProcedure::call('get_test_rows')
       ->with('keyInput', 'test')
+      ->with('valueInput', '%')
       ->execute();
 
     expect($results)
