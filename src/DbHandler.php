@@ -10,6 +10,7 @@ use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Schema;
@@ -31,8 +32,9 @@ class DbHandler {
 
   private static ?CacheInterface $cache = NULL;
 
-  private static bool $isReadOnlyMode = FALSE;
+  private static ?CommonInterface $common = NULL;
 
+  private static bool $isReadOnlyMode = FALSE;
 
   /**
    * Objeto PDO
@@ -62,6 +64,11 @@ class DbHandler {
 
   final public static function setCache(CacheInterface $cache) {
     self::$cache = $cache;
+  }
+
+
+  final public static function setCommon(CommonInterface $common) {
+    self::$common = $common;
   }
 
 
@@ -100,6 +107,10 @@ class DbHandler {
 
     if (DbHandler::$cache === NULL) {
       DbHandler::$cache = new Cache();
+    }
+
+    if (DbHandler::$common === NULL) {
+      DbHandler::$common = new Common();
     }
 
     self::$logger::log();
@@ -335,7 +346,7 @@ class DbHandler {
       }
 
       // Configuramos las columnas a obtener
-      $cols = Common::parseColumns($columns);
+      $cols = self::$common->parseColumns($columns);
 
       // Configuramos las cláusulas
       if (is_array($where)) {
@@ -856,7 +867,7 @@ class DbHandler {
       foreach ($dataCols as $col) {
         if (!isset($data[$col])) continue;
 
-        Common::checkValue($data[$col], $col);
+        self::$common->checkValue($data[$col], $col);
         $queryColumns[] = "`$col`";
         $queryParams[] = $bindBuilder->addValueWithPrefix($data[$col], $col);
       }
@@ -941,7 +952,7 @@ class DbHandler {
         $queryRowArr = [];
 
         foreach ($row as $_col => $_val) {
-          Common::checkValue($_val, $_col);
+          self::$common->checkValue($_val, $_col);
           $queryRowArr[] = $bindBuilder->addValueWithPrefix($_val, $_col);
         }
 
@@ -1054,7 +1065,7 @@ class DbHandler {
             && array_key_exists($col, $data)
           )
         ) {
-          Common::checkValue($data[$col], $col);
+          self::$common->checkValue($data[$col], $col);
           $placeholder = $bindBuilder->addValueWithPrefix($data[$col], $col);
           $updateQuerySet[] = "`{$col}` = {$placeholder}";
           continue;

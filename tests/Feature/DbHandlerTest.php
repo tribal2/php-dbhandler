@@ -220,7 +220,10 @@ describe('DbHandler callProcedure()', function () {
   });
 
   test('get_test_rows', function () {
-    $params = [ 'keyInput' => 'test' ];
+    $params = [
+      'keyInput' => 'test',
+      'valueInput' => 'te',
+    ];
     $result = $this->db->callProcedure('get_test_rows', $params);
 
     expect($result)->toBeArray();
