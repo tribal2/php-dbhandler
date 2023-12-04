@@ -19,6 +19,9 @@ interface StoredProcedureArgumentInterface {
   public function addValue(mixed $value): self;
 
 
+  public function hasValue(): bool;
+
+
   public static function getAllFor(
     string $dbName,
     string $procedureName,

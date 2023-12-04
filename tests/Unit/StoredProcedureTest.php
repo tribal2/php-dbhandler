@@ -42,7 +42,10 @@ describe('Exceptions', function () {
 describe('with() and getArguments()', function () {
 
   it('should accept values for expected argument', function () {
-    $mockArg = Mockery::mock(StoredProcedureArgumentInterface::class);
+    $mockArg = Mockery::mock(
+      StoredProcedureArgumentInterface::class,
+      [ 'hasValue' => TRUE ],
+    );
     $mockArg
       ->shouldReceive('addValue')
       ->andSet('name', 'valid')
@@ -62,10 +65,14 @@ describe('with() and getArguments()', function () {
   });
 
   it('getArguments() should return an empty array if no value is added', function () {
+    $mockArg = Mockery::mock(
+      StoredProcedureArgumentInterface::class,
+      [ 'hasValue' => FALSE ],
+    );
     $sp = new StoredProcedure(
       'get_test_rows',
       'dbhandler',
-      [ 'valid' => Mockery::mock(StoredProcedureArgumentInterface::class) ],
+      [ 'valid' => $mockArg ],
     );
 
     expect($sp->getArguments())
@@ -81,6 +88,7 @@ describe('SQL', function () {
   it('should generate valid SQL statements', function () {
     $mockArg = Mockery::mock(StoredProcedureArgumentInterface::class);
     $mockArg
+      ->shouldReceive('hasValue')->andReturn(TRUE)->getMock()
       ->shouldReceive('addValue')
       ->andSet('position', 1)
       ->andSet('name', 'valid')
@@ -109,6 +117,7 @@ describe('SQL', function () {
   it('should generate valid SQL statements with multiple values', function () {
     $mockArg1 = Mockery::mock(StoredProcedureArgumentInterface::class);
     $mockArg1
+      ->shouldReceive('hasValue')->andReturn(TRUE)->getMock()
       ->shouldReceive('addValue')
       ->andSet('position', 1)
       ->andSet('name', 'input1')
@@ -116,6 +125,7 @@ describe('SQL', function () {
 
     $mockArg2 = Mockery::mock(StoredProcedureArgumentInterface::class);
     $mockArg2
+      ->shouldReceive('hasValue')->andReturn(TRUE)->getMock()
       ->shouldReceive('addValue')
       ->andSet('position', 2)
       ->andSet('name', 'input2')
@@ -153,6 +163,7 @@ describe('Execute', function () {
   it('should execute SQL', function () {
     $mockArg = Mockery::mock(StoredProcedureArgumentInterface::class);
     $mockArg
+      ->shouldReceive('hasValue')->andReturn(TRUE)->getMock()
       ->shouldReceive('addValue')
       ->andSet('position', 1)
       ->andSet('name', 'valid')

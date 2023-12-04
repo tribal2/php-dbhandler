@@ -11,6 +11,7 @@ use Tribal2\DbHandler\PDOSingleton;
 class StoredProcedureArgument implements StoredProcedureArgumentInterface {
 
   public mixed $value;
+  private bool $isValueSet = FALSE;
 
 
   public function __construct(
@@ -25,8 +26,14 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
     $this->validateValue($value);
 
     $this->value = $value;
+    $this->isValueSet = TRUE;
 
     return $this;
+  }
+
+
+  public function hasValue(): bool {
+    return $this->isValueSet;
   }
 
 
