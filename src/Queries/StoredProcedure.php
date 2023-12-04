@@ -80,7 +80,7 @@ class StoredProcedure implements QueryInterface {
     $params = [];
     foreach ($this->params as $param) {
       $params[$param->position - 1] = $bindBuilder->addValueWithPrefix(
-        $param->value,
+        $param->hasValue() ? $param->value : NULL,
         $param->name,
       );
     }

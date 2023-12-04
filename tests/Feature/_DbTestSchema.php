@@ -88,9 +88,14 @@ class DbTestSchema {
         IN valueInput VARCHAR(5) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
       )
       BEGIN
-        SET keyInput = CONCAT('%', keyInput, '%');
-        SET valueInput = CONCAT('%', valueInput, '%');
-        SELECT * FROM test_table WHERE `key` LIKE keyInput OR `value` LIKE valueInput;
+          SET keyInput = CONCAT('%', keyInput, '%');
+
+          IF valueInput IS NULL THEN
+              SELECT * FROM test_table WHERE `key` LIKE keyInput;
+          ELSE
+              SET valueInput = CONCAT('%', valueInput, '%');
+              SELECT * FROM test_table WHERE `key` LIKE keyInput OR `value` LIKE valueInput;
+          END IF;
       END;
     ";
     $sth = $pdo->prepare($query);

@@ -105,7 +105,6 @@ describe('Results', function () {
   it('should return array of objects', function () {
     $results = StoredProcedure::call('get_test_rows')
       ->with('keyInput', 'test')
-      ->with('valueInput', '%')
       ->execute();
 
     expect($results)
