@@ -37,7 +37,7 @@ class PDOSingleton {
 
 
   final public static function getDbName(): string {
-    return self::$dbConfig->dbName;
+    return self::$dbConfig->getDbName();
   }
 
 
@@ -57,7 +57,7 @@ class PDOSingleton {
     }
 
     $cfg = self::$dbConfig;
-    $pdo = new PDO($cfg->getConnString(), $cfg->user, $cfg->password);
+    $pdo = new PDO($cfg->getConnString(), $cfg->getUser(), $cfg->getPassword());
 
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
