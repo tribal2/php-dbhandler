@@ -2,7 +2,6 @@
 
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
-use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Delete;
 
@@ -14,7 +13,6 @@ describe('Delete Builder', function () {
       'test_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(WhereFactoryInterface::class),
     );
     expect($delete)->toBeInstanceOf(Delete::class);
   });
@@ -38,7 +36,6 @@ describe('SQL Generation', function () {
       'test_table',
       Mockery::mock(PDO::class),
       $mockCommon,
-      Mockery::mock(WhereFactoryInterface::class),
     );
 
     $sql = $delete

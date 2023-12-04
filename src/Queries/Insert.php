@@ -5,8 +5,12 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Factories\WhereFactory;
+use Tribal2\DbHandler\Interfaces\ColumnsInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
+use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\PDOSingleton;
 
@@ -14,10 +18,23 @@ class Insert extends QueryModAbstract implements QueryInterface {
 
   // Properties
   private array $values = [ [] ];
+  private WhereFactoryInterface $_whereFactory;
 
 
   public static function into(string $table): self {
     return new self($table);
+  }
+
+
+  public function __construct(
+    string $table,
+    WhereFactoryInterface $whereFactory = NULL,
+    ?ColumnsInterface $columns = NULL,
+    ?PDO $pdo = NULL,
+    ?CommonInterface $common = NULL,
+  ) {
+    parent::__construct($table, $columns, $pdo, $common);
+    $this->_whereFactory = $whereFactory ?? new WhereFactory();
   }
 
 

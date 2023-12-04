@@ -2,7 +2,6 @@
 
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
-use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Select;
 
@@ -13,7 +12,6 @@ describe('SELECT builder', function () {
       'my_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(WhereFactoryInterface::class),
     );
     expect($select)->toBeInstanceOf(Select::class);
   });
@@ -34,7 +32,6 @@ describe('SQL', function () {
       'my_table',
       Mockery::mock(PDO::class),
       $mockCommon,
-      Mockery::mock(WhereFactoryInterface::class),
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class, [

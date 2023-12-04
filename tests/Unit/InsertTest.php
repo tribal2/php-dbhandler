@@ -12,10 +12,10 @@ describe('Builder', function () {
   test('static factory', function () {
     $insert = new Insert(
       'my_table',
+      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(ColumnsInterface::class),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(WhereFactoryInterface::class),
     );
 
     expect($insert)->toBeInstanceOf(Insert::class);
@@ -29,10 +29,10 @@ describe('Insert values', function () {
   beforeEach(function () {
     $this->insert = new Insert(
       'my_table',
+      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
-      Mockery::mock(WhereFactoryInterface::class),
     );
   });
 
@@ -79,10 +79,10 @@ describe('Insert values', function () {
   test('value() ignores columns that are not on the table', function () {
     $insert = new Insert(
       'my_table',
+      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
-      Mockery::mock(WhereFactoryInterface::class),
     );
     $values = $insert
       ->value('column1', 'value1')
@@ -98,10 +98,10 @@ describe('Insert values', function () {
 
     $insert = new Insert(
       'my_table',
+      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockedCommon,
-      Mockery::mock(WhereFactoryInterface::class),
     );
     $insert->value('value', [ 1, 2, 3 ]);
   })->throws(Exception::class);
@@ -142,10 +142,10 @@ describe('SQL', function () {
 
     $this->insert = new Insert(
       'test_table',
+      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockCommon,
-      Mockery::mock(WhereFactoryInterface::class),
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)
