@@ -19,7 +19,7 @@ describe('Update', function () {
   test('update records with Where', function () {
     $where = Where::equals('test_table_id', 1);
 
-    $updateResult = Update::table('test_table')
+    $updateResult = Update::_table('test_table')
       ->set('value', 'updated value')
       ->where($where)
       ->execute();
@@ -27,7 +27,7 @@ describe('Update', function () {
     expect($updateResult)->toBeInt();
     expect($updateResult)->toBe(1);
 
-    $updatedRow = Select::from('test_table')
+    $updatedRow = Select::_from('test_table')
       ->where($where)
       ->fetchFirst();
 
@@ -36,14 +36,14 @@ describe('Update', function () {
   });
 
   test('update all records', function () {
-    $updateResult = Update::table('test_table')
+    $updateResult = Update::_table('test_table')
       ->set('value', 'updated value')
       ->execute();
 
     expect($updateResult)->toBeInt();
     expect($updateResult)->toBe(1);
 
-    $updatedRows = Select::from('test_table')
+    $updatedRows = Select::_from('test_table')
       ->where(Where::equals('value', 'updated value'))
       ->fetchAll();
 

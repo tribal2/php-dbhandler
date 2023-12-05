@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -10,10 +11,9 @@ describe('Update Builder', function () {
 
   test('static factory', function () {
     $update = new Update(
-      'my_table',
-      Mockery::mock(ColumnsInterface::class),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
+      Mockery::mock(ColumnsFactoryInterface::class),
     );
 
     expect($update)->toBeInstanceOf(Update::class);
@@ -25,11 +25,13 @@ describe('Update Builder', function () {
 describe('set()', function () {
 
   test('should throw on invalid column name', function () {
-    $update = new Update(
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]);
+
+    $update = Update::_table(
       'test_table',
-      Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
     );
 
     $update->set('invalid_key', 'updated_key');
@@ -47,11 +49,13 @@ describe('set()', function () {
       ->andThrows(Exception::class, '<ERROR_MESSAGE>', 500)
       ->getMock();
 
-    $update = new Update(
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    $update = Update::_table(
       'test_table',
-      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockCommon,
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
     );
 
     $update->set('key', [ 'updated_key' ]);
@@ -73,11 +77,13 @@ describe('SQL', function () {
       ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')->getMock()
       ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')->getMock();
 
-    $this->update = new Update(
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    $this->update = Update::_table(
       'test_table',
-      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockCommon,
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)

@@ -5,6 +5,8 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
@@ -17,8 +19,25 @@ class Update extends QueryModAbstract implements QueryInterface {
   private ?WhereInterface $whereClause = NULL;
 
 
-  public static function table(string $table): self {
-    return new self($table);
+  public static function _table(string $table,
+    ?PDO $pdo = NULL,
+    ?CommonInterface $common = NULL,
+    ?ColumnsFactoryInterface $columnsFactory = NULL,
+  ): self {
+    $instance = new self($pdo, $common, $columnsFactory);
+    $instance->table($table);
+
+    return $instance;
+  }
+
+
+  public function table(string $table): self {
+    $this->table = $table;
+
+    // Get the columns of the table
+    $this->dbColumns = $this->_columnsFactory->make($table);
+
+    return $this;
   }
 
 
@@ -81,6 +100,8 @@ class Update extends QueryModAbstract implements QueryInterface {
     ?PDO $pdo = NULL,
     ?PDOBindBuilderInterface $bindBuilder = NULL
   ): int {
+    $this->beforeExecute();
+
     $_pdo = $pdo ?? PDOSingleton::get();
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
