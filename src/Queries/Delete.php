@@ -5,6 +5,7 @@ namespace Tribal2\DbHandler\Queries;
 use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
@@ -16,8 +17,22 @@ class Delete extends QueryAbstract implements QueryInterface {
   private ?WhereInterface $whereClause = NULL;
 
 
-  public static function from(string $table): self {
-    return new self($table);
+  public static function _from(
+    string $table,
+    ?PDO $pdo = NULL,
+    ?CommonInterface $common = NULL,
+  ): self {
+    $select = new self($pdo, $common);
+    $select->from($table);
+
+    return $select;
+  }
+
+
+  public function from(string $table): self {
+    $this->table = $table;
+
+    return $this;
   }
 
 
@@ -47,6 +62,8 @@ class Delete extends QueryAbstract implements QueryInterface {
     ?PDO $pdo = NULL,
     ?PDOBindBuilderInterface $bindBuilder = NULL,
   ): int {
+    $this->beforeExecute();
+
     $_pdo = $pdo ?? PDOSingleton::get();
     $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 

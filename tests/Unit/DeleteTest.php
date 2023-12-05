@@ -10,7 +10,6 @@ describe('Delete Builder', function () {
 
   test('static factory', function () {
     $delete = new Delete(
-      'test_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
     );
@@ -32,7 +31,7 @@ describe('SQL Generation', function () {
       'quoteWrap' => '<WRAPPED_VALUE>',
     ]);
 
-    $delete = new Delete(
+    $delete = Delete::_from(
       'test_table',
       Mockery::mock(PDO::class),
       $mockCommon,
