@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\Queries\StoredProcedure;
@@ -12,6 +13,8 @@ describe('Instance', function () {
       'get_test_rows',
       'dbhandler',
       [],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     expect($instance)->toBeInstanceOf(StoredProcedure::class);
@@ -27,6 +30,8 @@ describe('Exceptions', function () {
       'get_test_rows',
       'dbhandler',
       [ 'valid' => NULL ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     $sp->with('invalid', '123');
@@ -55,6 +60,8 @@ describe('with() and getArguments()', function () {
       'get_test_rows',
       'dbhandler',
       [ 'valid' => $mockArg ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
     $sp->with('valid', '123');
 
@@ -73,6 +80,8 @@ describe('with() and getArguments()', function () {
       'get_test_rows',
       'dbhandler',
       [ 'valid' => $mockArg ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     expect($sp->getArguments())
@@ -103,6 +112,8 @@ describe('SQL', function () {
       'get_test_rows',
       'dbhandler',
       [ 'valid' => $mockArg ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     $sql = $sp
@@ -142,7 +153,9 @@ describe('SQL', function () {
       [
         'input1' => $mockArg1,
         'input2' => $mockArg2,
-       ],
+      ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     $sql = $sp
@@ -187,11 +200,13 @@ describe('Execute', function () {
       'get_test_rows',
       'dbhandler',
       [ 'valid' => $mockArg ],
+      Mockery::mock(PDO::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     $result = $sp
       ->with('valid', '123')
-      ->execute($mockPdo, $mockBindBuilder);
+      ->execute($mockBindBuilder, $mockPdo);
 
     expect($result)
       ->toBeArray()
