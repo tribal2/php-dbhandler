@@ -9,7 +9,6 @@ describe('SELECT builder', function () {
 
   test('static factory', function () {
     $select = new Select(
-      'my_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
     );
@@ -28,7 +27,7 @@ describe('SQL', function () {
       'parseColumns' => '<COLUMNS>',
     ]);
 
-    $this->select = new Select(
+    $this->select = Select::_from(
       'my_table',
       Mockery::mock(PDO::class),
       $mockCommon,

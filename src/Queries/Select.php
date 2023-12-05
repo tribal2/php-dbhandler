@@ -34,8 +34,22 @@ class Select extends QueryAbstract implements QueryInterface {
   private int $fetchMethod = PDO::FETCH_OBJ;
 
 
-  public static function from(string $table): self {
-    return new self($table);
+  public static function _from(
+    string $table,
+    ?PDO $pdo = NULL,
+    ?CommonInterface $common = NULL,
+  ): self {
+    $select = new self($pdo, $common);
+    $select->from($table);
+
+    return $select;
+  }
+
+
+  public function from(string $table): self {
+    $this->table = $table;
+
+    return $this;
   }
 
 
@@ -111,6 +125,8 @@ class Select extends QueryAbstract implements QueryInterface {
     ?PDO $pdo = NULL,
     ?PDOBindBuilderInterface $bindBuilder = NULL
   ): array {
+    $this->beforeExecute();
+
     $_pdo = $pdo ?? PDOSingleton::get();
     $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
