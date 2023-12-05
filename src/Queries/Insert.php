@@ -6,7 +6,7 @@ use Exception;
 use PDO;
 use Tribal2\DbHandler\Abstracts\QueryModAbstract;
 use Tribal2\DbHandler\Factories\WhereFactory;
-use Tribal2\DbHandler\Interfaces\ColumnsInterface;
+use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
@@ -21,20 +21,38 @@ class Insert extends QueryModAbstract implements QueryInterface {
   private WhereFactoryInterface $_whereFactory;
 
 
-  public static function into(string $table): self {
-    return new self($table);
+  public static function _into(
+    string $table,
+    ?PDO $pdo = NULL,
+    ?CommonInterface $common = NULL,
+    ?ColumnsFactoryInterface $columnsFactory = NULL,
+    ?WhereFactoryInterface $whereFactory = NULL,
+  ): self {
+    $insert = new self($pdo, $common, $columnsFactory, $whereFactory);
+    $insert->into($table);
+
+    return $insert;
   }
 
 
   public function __construct(
-    string $table,
-    WhereFactoryInterface $whereFactory = NULL,
-    ?ColumnsInterface $columns = NULL,
     ?PDO $pdo = NULL,
     ?CommonInterface $common = NULL,
+    ?ColumnsFactoryInterface $columnsFactory = NULL,
+    ?WhereFactoryInterface $whereFactory = NULL,
   ) {
-    parent::__construct($table, $columns, $pdo, $common);
+    parent::__construct($pdo, $common, $columnsFactory);
     $this->_whereFactory = $whereFactory ?? new WhereFactory();
+  }
+
+
+  public function into(string $table): self {
+    $this->table = $table;
+
+    // Get the columns of the table
+    $this->dbColumns = $this->_columnsFactory->make($table);
+
+    return $this;
   }
 
 
@@ -134,6 +152,8 @@ class Insert extends QueryModAbstract implements QueryInterface {
     ?PDO $pdo = NULL,
     ?PDOBindBuilderInterface $bindBuilder = NULL,
   ): int {
+    parent::beforeExecute();
+
     $_pdo = $pdo ?? PDOSingleton::get();
 
     // Check if there are collisions
@@ -193,7 +213,10 @@ class Insert extends QueryModAbstract implements QueryInterface {
       PDO::PARAM_STR,
       $this->_common,
     );
-    $exists = Select::from($this->table)
+
+    $select = new Select($this->_pdo, $this->_common);
+    $exists = $select
+      ->from($this->table)
       ->where($where)
       ->fetchFirst();
 

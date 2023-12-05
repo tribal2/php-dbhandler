@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -9,13 +10,12 @@ use Tribal2\DbHandler\Queries\Insert;
 
 describe('Builder', function () {
 
-  test('static factory', function () {
+  test('constructor', function () {
     $insert = new Insert(
-      'my_table',
-      Mockery::mock(WhereFactoryInterface::class),
-      Mockery::mock(ColumnsInterface::class),
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class),
+      Mockery::mock(ColumnsFactoryInterface::class),
+      Mockery::mock(WhereFactoryInterface::class),
     );
 
     expect($insert)->toBeInstanceOf(Insert::class);
@@ -27,12 +27,14 @@ describe('Builder', function () {
 describe('Insert values', function () {
 
   beforeEach(function () {
-    $this->insert = new Insert(
-      'my_table',
-      Mockery::mock(WhereFactoryInterface::class),
-      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    $this->insert = Insert::_into(
+      'test_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(WhereFactoryInterface::class),
     );
   });
 
@@ -77,14 +79,14 @@ describe('Insert values', function () {
   });
 
   test('value() ignores columns that are not on the table', function () {
-    $insert = new Insert(
-      'my_table',
-      Mockery::mock(WhereFactoryInterface::class),
-      Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]),
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]);
+    $values = Insert::_into(
+      'test_table',
       Mockery::mock(PDO::class),
       Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
-    );
-    $values = $insert
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(WhereFactoryInterface::class),
+    )
       ->value('column1', 'value1')
       ->getValues();
 
@@ -96,14 +98,15 @@ describe('Insert values', function () {
     $mockedCommon = Mockery::mock(CommonInterface::class);
     $mockedCommon->shouldReceive('checkValue')->andThrow(Exception::class);
 
-    $insert = new Insert(
-      'my_table',
-      Mockery::mock(WhereFactoryInterface::class),
-      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    Insert::_into(
+      'test_table',
       Mockery::mock(PDO::class),
       $mockedCommon,
-    );
-    $insert->value('value', [ 1, 2, 3 ]);
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(WhereFactoryInterface::class),
+    )->value('value', [ 1, 2, 3 ]);
   })->throws(Exception::class);
 
   test('rows()', function () {
@@ -140,12 +143,14 @@ describe('SQL', function () {
       ->shouldReceive('quoteWrap')->with('created_at')->andReturn('`created_at`')->getMock()
       ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock();
 
-    $this->insert = new Insert(
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    $this->insert = Insert::_into(
       'test_table',
-      Mockery::mock(WhereFactoryInterface::class),
-      Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]),
       Mockery::mock(PDO::class),
       $mockCommon,
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(WhereFactoryInterface::class),
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)
