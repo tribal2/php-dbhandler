@@ -97,22 +97,13 @@ class Update extends QueryModAbstract implements QueryInterface {
 
 
   public function execute(
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
     ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL
   ): int {
-    $this->beforeExecute();
+    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
 
-    $_pdo = $pdo ?? PDOSingleton::get();
-    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
-
-    $query = $this->getSql($bindBuilder);
-
-    $pdoStatement = $_pdo->prepare($query);
-    $bindBuilder->bindToStatement($pdoStatement);
-
-    $pdoStatement->execute();
-
-    return $pdoStatement->rowCount();
+    // Return the number of affected rows
+    return $executedPdoStatement->rowCount();
   }
 
 

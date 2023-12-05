@@ -149,29 +149,16 @@ class Insert extends QueryModAbstract implements QueryInterface {
 
 
   public function execute(
-    ?PDO $pdo = NULL,
     ?PDOBindBuilderInterface $bindBuilder = NULL,
+    ?PDO $pdo = NULL,
   ): int {
-    parent::beforeExecute();
-
-    $_pdo = $pdo ?? PDOSingleton::get();
-
     // Check if there are collisions
     $this->checkForCollisions();
 
-    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
-
-    $query = $this->getSql($bindBuilder);
-    $pdoStatement = $_pdo->prepare($query);
-
-    // Bind values
-    $bindBuilder->bindToStatement($pdoStatement);
-
-    // Execute query
-    $pdoStatement->execute();
+    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
 
     // Return the number of affected rows
-    return $pdoStatement->rowCount();
+    return $executedPdoStatement->rowCount();
   }
 
 

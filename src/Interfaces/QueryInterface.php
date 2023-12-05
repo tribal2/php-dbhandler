@@ -8,8 +8,8 @@ interface QueryInterface {
 
 
   public function execute(
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
     ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL
   );
 
 

@@ -122,24 +122,13 @@ class Select extends QueryAbstract implements QueryInterface {
 
 
   public function execute(
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
     ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL
   ): array {
-    $this->beforeExecute();
+    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
 
-    $_pdo = $pdo ?? PDOSingleton::get();
-    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
-
-    $query = $this->getSql($_bindBuilder);
-    $pdoStatement = $_pdo->prepare($query);
-
-    // Bind values
-    $_bindBuilder->bindToStatement($pdoStatement);
-
-    // Execute query
-    $pdoStatement->execute();
-
-    return $pdoStatement->fetchAll($this->fetchMethod);
+    // Return an array with values depending on the fetch method
+    return $executedPdoStatement->fetchAll($this->fetchMethod);
   }
 
 
