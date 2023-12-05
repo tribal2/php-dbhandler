@@ -2,6 +2,7 @@
 
 namespace Tribal2\DbHandler\Abstracts;
 
+use Exception;
 use PDO;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\PDOSingleton;
@@ -18,13 +19,18 @@ abstract class QueryAbstract {
 
 
   public function __construct(
-    string $table,
     ?PDO $pdo = NULL,
     ?CommonInterface $common = NULL,
   ) {
-    $this->table = $table;
     $this->_pdo = $pdo ?? PDOSingleton::get();
     $this->_common = $common ?? new Common();
+  }
+
+
+  protected function beforeExecute() {
+    if (!isset($this->table)) {
+      throw new Exception('Table name is not set');
+    }
   }
 
 
