@@ -1,15 +1,14 @@
 <?php
 
+use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\DbConfig;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Helpers\Logger;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 
 class DbTestSchema {
 
 
-  public static function up() {
-    /*
-    * DB Connection setup
-    */
+  public static function getConfig(): DbConfig {
     $dbConfig = new DbConfig(
       $_ENV['MYSQL_DATABASE'],
       $_ENV['MYSQL_USER'],
@@ -19,14 +18,38 @@ class DbTestSchema {
       $_ENV['MYSQL_ENCODING'],
     );
 
-    PDOSingleton::configure($dbConfig);
+    return $dbConfig;
+  }
 
+
+  public static function getPdoWrapper(): PDOWrapperInterface {
+    $cfg = self::getConfig();
+    $logger = new Logger();
+
+    $myPdo = new PDOWrapper($cfg, $logger);
+
+    return $myPdo;
+  }
+
+
+  public static function getPdo(): PDO {
+    $cfg = self::getConfig();
+
+    $pdo = new PDO($cfg->getConnString(), $cfg->getUser(), $cfg->getPassword());
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
+
+    return $pdo;
+  }
+
+
+  public static function up() {
     self::down();
 
     /*
     * DB Dummy data setup
     */
-    $pdo = PDOSingleton::get();
+    $pdo = self::getPdo();
 
     $query = 'CREATE TABLE IF NOT EXISTS `test_table` (
       `test_table_id` int(11) NOT NULL AUTO_INCREMENT,
@@ -100,11 +123,13 @@ class DbTestSchema {
     ";
     $sth = $pdo->prepare($query);
     $sth->execute();
+
+    $pdo = NULL;
   }
 
 
   public static function down() {
-    $pdo = PDOSingleton::get();
+    $pdo = self::getPdo();
 
     // Drop the test table
     $query = 'DROP TABLE IF EXISTS `test_table`';
@@ -121,7 +146,7 @@ class DbTestSchema {
     $sth = $pdo->prepare($query);
     $sth->execute();
 
-    PDOSingleton::destroy();
+    $pdo = NULL;
   }
 
 
