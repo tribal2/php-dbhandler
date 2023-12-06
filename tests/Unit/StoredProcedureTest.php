@@ -1,7 +1,7 @@
 <?php
 
-use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\Queries\StoredProcedure;
 
@@ -10,11 +10,9 @@ describe('Instance', function () {
 
   it('should generate an instance of StoredProcedure', function () {
     $instance = new StoredProcedure(
-      'get_test_rows',
       'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     expect($instance)->toBeInstanceOf(StoredProcedure::class);
@@ -28,10 +26,8 @@ describe('Exceptions', function () {
   it('should throw with invalid argument name', function () {
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => NULL ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     $sp->with('invalid', '123');
@@ -58,10 +54,8 @@ describe('with() and getArguments()', function () {
 
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
     $sp->with('valid', '123');
 
@@ -78,10 +72,8 @@ describe('with() and getArguments()', function () {
     );
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     expect($sp->getArguments())
@@ -110,10 +102,8 @@ describe('SQL', function () {
 
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     $sql = $sp
@@ -149,13 +139,11 @@ describe('SQL', function () {
 
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      Mockery::mock(PDOWrapperInterface::class),
       [
         'input1' => $mockArg1,
         'input2' => $mockArg2,
       ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     $sql = $sp
@@ -187,26 +175,24 @@ describe('Execute', function () {
       ->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_VALUE>')->getMock()
       ->shouldReceive('bindToStatement');
 
-    $mockPdoStatement = Mockery::mock(PDOStatement::class, [
-      'execute' => TRUE,
-      'fetchAll' => [ (object)[ 'id' => 1, 'name' => 'test' ] ],
-    ]);
-
-    $mockPdo = Mockery::mock(PDO::class, [
-      'prepare' => $mockPdoStatement,
+    $mockPdoWrapper = Mockery::mock(PDOWrapperInterface::class, [
+      'execute' => [
+        (object)[
+          'id' => 1,
+          'name' => 'test',
+        ],
+      ],
     ]);
 
     $sp = new StoredProcedure(
       'get_test_rows',
-      'dbhandler',
+      $mockPdoWrapper,
       [ 'valid' => $mockArg ],
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
     );
 
     $result = $sp
       ->with('valid', '123')
-      ->execute($mockBindBuilder, $mockPdo);
+      ->execute($mockBindBuilder);
 
     expect($result)
       ->toBeArray()

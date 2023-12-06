@@ -106,9 +106,9 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
     string $procedureName,
     SchemaInterface $schema,
   ): array {
-    $result = $schema->getStoredProcedureArguments($procedureName);
+    $dbArguments = $schema->getStoredProcedureArguments($procedureName);
 
-    if (empty($result)) {
+    if (empty($dbArguments)) {
       throw new \Exception(
         "No arguments found for stored procedure {$procedureName}.",
         500,
@@ -116,7 +116,7 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
     }
 
     $arguments = [];
-    foreach ($result as $argument) {
+    foreach ($dbArguments as $argument) {
       $arguments[$argument->PARAMETER_NAME] = new StoredProcedureArgument(
         $argument->ORDINAL_POSITION,
         $argument->PARAMETER_NAME,
