@@ -8,7 +8,7 @@ describe('Class', function () {
 
   test('constructor', function () {
     $schema = new Schema(
-      Mockery::mock(PDOWrapperInterface::class),
+      Mockery::mock(PDOWrapperInterface::class, [ 'getDbName' => 'test_db' ]),
       Mockery::mock(CommonInterface::class),
     );
     expect($schema)->toBeInstanceOf(Schema::class);
@@ -19,24 +19,28 @@ describe('Class', function () {
 
 describe('Methods', function () {
 
-  test('checkIfTableExists() should return TRUE', function () {
-    $result = Schema::_checkIfTableExists(
-      'users',
-      Mockery::mock(PDOWrapperInterface::class, [ 'execute' => [ 1 ] ]),
-    );
-
-    expect($result)->toBeBool();
-    expect($result)->toBe(TRUE);
+  beforeEach(function () {
+    $this->myPdo = Mockery::mock(PDOWrapperInterface::class, [
+      'getDbName' => 'test_db',
+    ]);
   });
 
-  test('checkIfTableExists() should return FALSE', function () {
-    $result = Schema::_checkIfTableExists(
-      'users',
-      Mockery::mock(PDOWrapperInterface::class, [ 'execute' => [] ]),
-    );
+  test("checkIfTableExists('known_table') - should return TRUE", function () {
+    $this->myPdo->shouldReceive('execute')->once()->andReturn([ 1 ]);
+    $schema = new Schema($this->myPdo);
 
-    expect($result)->toBeBool();
-    expect($result)->toBe(FALSE);
+    expect($schema->checkIfTableExists('users'))
+      ->toBeBool()
+      ->toBe(TRUE);
+  });
+
+  test("checkIfTableExists('unknown_table') should return FALSE", function () {
+    $this->myPdo->shouldReceive('execute')->once()->andReturn([]);
+    $schema = new Schema($this->myPdo);
+
+    expect($schema->checkIfTableExists('unknown_table'))
+      ->toBeBool()
+      ->toBe(FALSE);
   });
 
 });
