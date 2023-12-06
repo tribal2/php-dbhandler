@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Queries\Schema;
 
 describe('Instance', function () {
 
@@ -56,37 +57,26 @@ describe('StoredProcedureArgument', function () {
 
 describe('Static methods', function () {
   it('should fetch stored procedure arguments', function () {
-    $mockPdoStatement = Mockery::mock(PDOStatement::class);
-    $mockPdoStatement
-      ->shouldReceive('execute')->getMock()
-      ->shouldReceive('fetchAll')->andReturn([
-          (object)[
-            'ORDINAL_POSITION' => 1,
-            'PARAMETER_NAME' => 'param1',
-            'DATA_TYPE' => 'int',
-            'CHARACTER_MAXIMUM_LENGTH' => NULL
-          ],
-          (object)[
-            'ORDINAL_POSITION' => 2,
-            'PARAMETER_NAME' => 'param2',
-            'DATA_TYPE' => 'varchar',
-            'CHARACTER_MAXIMUM_LENGTH' => 255
-          ],
-      ]);
-
-    $mockPdo = Mockery::mock(PDO::class);
-    $mockPdo->shouldReceive('prepare')->andReturn($mockPdoStatement);
-
-    $mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class);
-    $mockBindBuilder
-      ->shouldReceive('addValue')->getMock()
-      ->shouldReceive('bindToStatement');
+    $mockSchema = Mockery::mock(Schema::class, [
+      'getStoredProcedureArguments' => [
+        (object)[
+          'ORDINAL_POSITION' => 1,
+          'PARAMETER_NAME' => 'param1',
+          'DATA_TYPE' => 'int',
+          'CHARACTER_MAXIMUM_LENGTH' => NULL
+        ],
+        (object)[
+          'ORDINAL_POSITION' => 2,
+          'PARAMETER_NAME' => 'param2',
+          'DATA_TYPE' => 'varchar',
+          'CHARACTER_MAXIMUM_LENGTH' => 255
+        ],
+      ],
+    ]);
 
     $arguments = StoredProcedureArgument::getAllFor(
-      'db_name',
       'procedure_name',
-      $mockPdo,
-      $mockBindBuilder,
+      $mockSchema,
     );
 
     expect($arguments)

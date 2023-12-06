@@ -8,12 +8,14 @@ use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
 
 class StoredProcedure extends QueryAbstract implements QueryInterface {
+  use QueryBeforeExecuteDoNothingTrait;
 
   // Properties
   public string $name;
@@ -26,13 +28,11 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
 
   public static function call(
     string $name,
-    ?string $dbName = NULL,
+    PDOWrapperInterface $pdo,
     ?array $params = NULL,
-    ?PDO $pdo = NULL,
     ?CommonInterface $common = NULL,
   ): self {
-    $dbName = $dbName ?? PDOSingleton::getDbName();
-    return new self($name, $dbName, $params, $pdo, $common);
+    return new self($name, $pdo, $params, $common);
   }
 
 
@@ -40,25 +40,26 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
    * StoredProcedure constructor.
    *
    * @param string                                  $name
-   * @param string                                  $dbName
+   * @param PDOWrapperInterface                     $pdo
    * @param StoredProcedureArgumentInterface[]|null $params
-   * @param PDO|null                                $pdo
    * @param CommonInterface|null                    $common
    */
   public function __construct(
     string $name,
-    string $dbName,
+    PDOWrapperInterface $pdo,
     ?array $params = NULL,
-    ?PDO $pdo = NULL,
     ?CommonInterface $common = NULL,
   ) {
     parent::__construct($pdo, $common);
 
-    $this->table = $name;
     $this->name = $name;
 
-    $this->params = $params
-      ?? StoredProcedureArgument::getAllFor($dbName, $name);
+    if (is_null($params)) {
+      $schema = new Schema($this->_pdo, $this->_common);
+      $params = StoredProcedureArgument::getAllFor($name, $schema);
+    }
+
+    $this->params = $params;
   }
 
 
@@ -95,9 +96,11 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
 
     $params = [];
     foreach ($this->params as $param) {
+      $paramValue = $param->hasValue() ? $param->value : NULL;
       $params[$param->position - 1] = $bindBuilder->addValueWithPrefix(
-        $param->hasValue() ? $param->value : NULL,
+        $paramValue,
         $param->name,
+        is_null($paramValue) ? PDO::PARAM_NULL : PDO::PARAM_STR,
       );
     }
 
@@ -107,13 +110,8 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
   }
 
 
-  public function execute(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDO $pdo = NULL,
-  ): array {
-    $executedStatement = parent::_execute($bindBuilder, $pdo);
-
-    return $executedStatement->fetchAll(PDO::FETCH_OBJ);
+  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): array {
+    return parent::_execute($bindBuilder);
   }
 
 

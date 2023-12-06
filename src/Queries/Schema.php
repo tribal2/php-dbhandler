@@ -3,29 +3,37 @@
 namespace Tribal2\DbHandler\Queries;
 
 use Exception;
-use PDO;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
 
-class Schema {
+class Schema extends QueryAbstract implements SchemaInterface {
+  use QueryBeforeExecuteDoNothingTrait;
 
-  private PDO $_pdo;
-  private PDOBindBuilderInterface $_bindBuilder;
-
-
-  public static function checkIfTableExists(string $table): bool {
-    $schema = new self();
-    return $schema->_checkIfTableExists($table);
-  }
+  private string $database;
+  private string $_query;
 
 
   public function __construct(
-    ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL
+    PDOWrapperInterface $pdo,
+    ?CommonInterface $common = NULL,
   ) {
-    $this->_pdo = $pdo ?? PDOSingleton::get();
-    $this->_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
+    parent::__construct($pdo, $common);
+    $this->database = $this->_pdo->getDbName();
+  }
+
+
+  public function getSql(?PDOBindBuilderInterface $_ = NULL): string {
+    return $this->_query;
+  }
+
+
+  public function getDatabase(): string {
+    return $this->database;
   }
 
 
@@ -36,16 +44,39 @@ class Schema {
    * @return bool True if the table exists, false otherwise
    * @throws Exception
    */
-  public function _checkIfTableExists(string $table): bool {
-    $tablePlaceholder = $this->_bindBuilder->addValue($table);
-    $query = "SHOW TABLES LIKE {$tablePlaceholder};";
+  public function checkIfTableExists(string $table): bool {
+    $bindBuilder = new PDOBindBuilder();
+    $tablePlaceholder = $bindBuilder->addValueWithPrefix(
+      $table,
+      'table',
+    );
+    $this->_query = "SHOW TABLES LIKE {$tablePlaceholder};";
 
-    $sth = $this->_pdo->prepare($query);
-    $this->_bindBuilder->bindToStatement($sth);
+    $resultArr = parent::_execute($bindBuilder);
 
-    $sth->execute();
+    return count($resultArr) > 0;
+  }
 
-    return ($sth->rowCount() === 1);
+
+  public function getStoredProcedureArguments(string $procedure): array {
+    $bindBuilder = new PDOBindBuilder();
+    $dbPlaceholder = $bindBuilder->addValue($this->database);
+    $namePlaceholder = $bindBuilder->addValue($procedure);
+
+    $this->_query = "
+      SELECT
+          ORDINAL_POSITION,
+          PARAMETER_NAME,
+          DATA_TYPE,
+          CHARACTER_MAXIMUM_LENGTH
+      FROM
+          information_schema.PARAMETERS
+      WHERE
+          SPECIFIC_SCHEMA = {$dbPlaceholder}
+          AND SPECIFIC_NAME = {$namePlaceholder};
+    ";
+
+    return parent::_execute($bindBuilder);
   }
 
 

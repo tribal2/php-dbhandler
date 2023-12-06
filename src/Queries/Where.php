@@ -333,7 +333,7 @@ class Where implements WhereInterface {
   ): Where {
     return new Where(
       $key,
-      'NULL',
+      NULL,
       'IS',
       PDO::PARAM_NULL,
       $common ?? new Common(),
@@ -347,7 +347,7 @@ class Where implements WhereInterface {
   ): Where {
     return new Where(
       $key,
-      'NULL',
+      NULL,
       'IS NOT',
       PDO::PARAM_NULL,
       $common ?? new Common(),

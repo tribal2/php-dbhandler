@@ -10,6 +10,7 @@ use Tribal2\DbHandler\Queries\Where;
 require_once __DIR__ . '/_DbTestSchema.php';
 
 beforeAll(function () {
+  DbTestSchema::usePdoSingleton();
   DbTestSchema::up();
 });
 
@@ -590,7 +591,6 @@ describe('DbHandler DELETE', function () {
 
 describe('DbHandler SELECT', function () {
   beforeEach(function () {
-    DbHandler::setLogger(new Logger());
     $this->db = DbHandler::getInstance();
   });
 

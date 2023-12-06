@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Select;
 
@@ -9,7 +10,7 @@ describe('SELECT builder', function () {
 
   test('static factory', function () {
     $select = new Select(
-      Mockery::mock(PDO::class),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(CommonInterface::class),
     );
     expect($select)->toBeInstanceOf(Select::class);
@@ -29,7 +30,7 @@ describe('SQL', function () {
 
     $this->select = Select::_from(
       'my_table',
-      Mockery::mock(PDO::class),
+      Mockery::mock(PDOWrapperInterface::class),
       $mockCommon,
     );
 

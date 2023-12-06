@@ -15,8 +15,12 @@ afterAll(function () {
 
 describe('Columns', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('getTableColumns()', function () {
-    $columns = Columns::for('test_table');
+    $columns = Columns::_for('test_table', $this->myPdo);
     expect($columns)->toBeObject();
     expect((array)$columns)->toHaveKeys([
       'table',
@@ -33,7 +37,7 @@ describe('Columns', function () {
   });
 
   test('has() returns true when column exist', function () {
-    $columns = Columns::for('test_table');
+    $columns = Columns::_for('test_table', $this->myPdo);
 
     $columnsInTable = [
     'test_table_id',
@@ -49,7 +53,7 @@ describe('Columns', function () {
   });
 
   test('has() returns false when column does not exist', function () {
-    $columns = Columns::for('test_table');
+    $columns = Columns::_for('test_table', $this->myPdo);
 
     $columnsNotInTable = [
     'test_table_id_',

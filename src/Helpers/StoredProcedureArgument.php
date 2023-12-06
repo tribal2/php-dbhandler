@@ -2,11 +2,8 @@
 
 namespace Tribal2\DbHandler\Helpers;
 
-use PDO;
-use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
-use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
 
 class StoredProcedureArgument implements StoredProcedureArgumentInterface {
 
@@ -106,38 +103,12 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
 
 
   public static function getAllFor(
-    string $dbName,
     string $procedureName,
-    ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
+    SchemaInterface $schema,
   ): array {
-    $_pdo = $pdo ?? PDOSingleton::get();
-    $_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
+    $dbArguments = $schema->getStoredProcedureArguments($procedureName);
 
-    $dbPlaceholder = $_bindBuilder->addValue($dbName);
-    $namePlaceholder = $_bindBuilder->addValue($procedureName);
-
-    $query = "
-      SELECT
-          ORDINAL_POSITION,
-          PARAMETER_NAME,
-          DATA_TYPE,
-          CHARACTER_MAXIMUM_LENGTH
-      FROM
-          information_schema.PARAMETERS
-      WHERE
-          SPECIFIC_SCHEMA = {$dbPlaceholder}
-          AND SPECIFIC_NAME = {$namePlaceholder};
-    ";
-
-    $sth = $_pdo->prepare($query);
-    $_bindBuilder->bindToStatement($sth);
-
-    $sth->execute();
-
-    $result = $sth->fetchAll(PDO::FETCH_OBJ);
-
-    if (empty($result)) {
+    if (empty($dbArguments)) {
       throw new \Exception(
         "No arguments found for stored procedure {$procedureName}.",
         500,
@@ -145,7 +116,7 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
     }
 
     $arguments = [];
-    foreach ($result as $argument) {
+    foreach ($dbArguments as $argument) {
       $arguments[$argument->PARAMETER_NAME] = new StoredProcedureArgument(
         $argument->ORDINAL_POSITION,
         $argument->PARAMETER_NAME,

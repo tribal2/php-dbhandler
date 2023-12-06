@@ -17,8 +17,12 @@ afterAll(function () {
 
 describe('fetchAll()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('return all', function () {
-    $result = Select::_from('test_table')
+    $result = Select::_from('test_table', $this->myPdo)
       ->fetchAll();
 
     expect($result)->toBeArray();
@@ -26,7 +30,7 @@ describe('fetchAll()', function () {
   });
 
   test('return all reversed', function () {
-    $result = Select::_from('test_table')
+    $result = Select::_from('test_table', $this->myPdo)
       ->orderBy('test_table_id', OrderByDirectionEnum::DESC)
       ->fetchAll();
 
@@ -41,8 +45,12 @@ describe('fetchAll()', function () {
 
 describe('fetchFirst()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('return first', function () {
-    $result = Select::_from('test_table')
+    $result = Select::_from('test_table', $this->myPdo)
       ->fetchFirst();
 
     expect($result)->toBeObject();
@@ -50,7 +58,7 @@ describe('fetchFirst()', function () {
   });
 
   test('return last', function () {
-    $result = Select::_from('test_table')
+    $result = Select::_from('test_table', $this->myPdo)
       ->orderBy('test_table_id', OrderByDirectionEnum::DESC)
       ->fetchFirst();
 
@@ -62,8 +70,12 @@ describe('fetchFirst()', function () {
 
 describe('fetchColumn()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('throw when multiple columns are selected', function () {
-    Select::_from('test_table')
+    Select::_from('test_table', $this->myPdo)
       ->columns(['test_table_id', 'value'])
       ->fetchColumn();
   })->throws(
@@ -72,7 +84,7 @@ describe('fetchColumn()', function () {
   );
 
   test('using column() to set the column', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->column('value')
       ->fetchColumn();
 
@@ -82,7 +94,7 @@ describe('fetchColumn()', function () {
   });
 
   test('passing a column name', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchColumn('value');
 
     expect($res)->toBeArray();
@@ -91,7 +103,7 @@ describe('fetchColumn()', function () {
   });
 
   test('passing a column name when other columns are already set', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->columns(['test_table_id', 'value'])
       ->fetchColumn('value');
 
@@ -105,8 +117,12 @@ describe('fetchColumn()', function () {
 
 describe('fetchValue()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('throw when multiple columns are selected', function () {
-    Select::_from('test_table')
+    Select::_from('test_table', $this->myPdo)
       ->columns(['test_table_id', 'value'])
       ->fetchValue();
   })->throws(
@@ -115,7 +131,7 @@ describe('fetchValue()', function () {
   );
 
   test('using column() to set the column', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->column('value')
       ->fetchValue();
 
@@ -123,14 +139,14 @@ describe('fetchValue()', function () {
   });
 
   test('passing a column name', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchValue('value');
 
     expect($res)->toBe('Test value 1');
   });
 
   test('passing a column name when other columns are already set', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->columns(['test_table_id', 'value'])
       ->fetchValue('value');
 
@@ -138,7 +154,7 @@ describe('fetchValue()', function () {
   });
 
   test('return NULL when there is no value', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->where(Where::equals('test_table_id', 3))
       ->fetchValue('value');
 
@@ -150,8 +166,12 @@ describe('fetchValue()', function () {
 
 describe('functions', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('DISTINCT()', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchColumn('DISTINCT(`key`)');
 
     expect($res)->toBeArray();
@@ -161,7 +181,7 @@ describe('functions', function () {
   });
 
   test('DISTINCT() using method', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchDistincts('key');
 
     expect($res)->toBeArray();
@@ -171,14 +191,14 @@ describe('functions', function () {
   });
 
   test('COUNT()', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchValue('COUNT(*)');
 
     expect($res)->toBe('2');
   });
 
   test('COUNT() using method', function () {
-    $res = Select::_from('test_table')
+    $res = Select::_from('test_table', $this->myPdo)
       ->fetchCount();
 
     expect($res)->toBe(2);

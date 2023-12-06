@@ -1,14 +1,15 @@
 <?php
 
-use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Queries\Schema;
 
 describe('Class', function () {
 
   test('constructor', function () {
     $schema = new Schema(
-      Mockery::mock(PDO::class),
-      Mockery::mock(PDOBindBuilderInterface::class),
+      Mockery::mock(PDOWrapperInterface::class, [ 'getDbName' => 'test_db' ]),
+      Mockery::mock(CommonInterface::class),
     );
     expect($schema)->toBeInstanceOf(Schema::class);
   });
@@ -18,44 +19,28 @@ describe('Class', function () {
 
 describe('Methods', function () {
 
-  test('checkIfTableExists() should return TRUE', function () {
-    $schema = new Schema(
-      Mockery::mock(PDO::class, [
-        'prepare' => Mockery::mock(PDOStatement::class, [
-          'execute' => TRUE,
-          'rowCount' => 1,
-        ]),
-      ]),
-      Mockery::mock(PDOBindBuilderInterface::class, [
-        'addValue' => '',
-        'bindToStatement' => '',
-      ]),
-    );
-
-    $result = $schema->_checkIfTableExists('users');
-
-    expect($result)->toBeBool();
-    expect($result)->toBe(TRUE);
+  beforeEach(function () {
+    $this->myPdo = Mockery::mock(PDOWrapperInterface::class, [
+      'getDbName' => 'test_db',
+    ]);
   });
 
-  test('checkIfTableExists() should return FALSE', function () {
-    $schema = new Schema(
-      Mockery::mock(PDO::class, [
-        'prepare' => Mockery::mock(PDOStatement::class, [
-          'execute' => TRUE,
-          'rowCount' => 0,
-        ]),
-      ]),
-      Mockery::mock(PDOBindBuilderInterface::class, [
-        'addValue' => '',
-        'bindToStatement' => '',
-      ]),
-    );
+  test("checkIfTableExists('known_table') - should return TRUE", function () {
+    $this->myPdo->shouldReceive('execute')->once()->andReturn([ 1 ]);
+    $schema = new Schema($this->myPdo);
 
-    $result = $schema->_checkIfTableExists('users');
+    expect($schema->checkIfTableExists('users'))
+      ->toBeBool()
+      ->toBe(TRUE);
+  });
 
-    expect($result)->toBeBool();
-    expect($result)->toBe(FALSE);
+  test("checkIfTableExists('unknown_table') should return FALSE", function () {
+    $this->myPdo->shouldReceive('execute')->once()->andReturn([]);
+    $schema = new Schema($this->myPdo);
+
+    expect($schema->checkIfTableExists('unknown_table'))
+      ->toBeBool()
+      ->toBe(FALSE);
   });
 
 });

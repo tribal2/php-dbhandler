@@ -2,9 +2,9 @@
 
 namespace Tribal2\DbHandler\Helpers;
 
-use Tribal2\DbHandler\Interfaces\LoggerInterface as InterfacesLoggerInterface;
+use Tribal2\DbHandler\Interfaces\LoggerInterface;
 
-class Logger implements InterfacesLoggerInterface {
+class Logger implements LoggerInterface {
 
 
   public static function log($data = NULL, $title = '', $level = 'debug'): void {

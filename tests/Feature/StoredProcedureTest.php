@@ -16,17 +16,21 @@ afterAll(function () {
 
 describe('Exceptions', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   it('should throw with invalid procedure name', function () {
-    StoredProcedure::call('invalid_procedure_name');
+    StoredProcedure::call('invalid_procedure_name', $this->myPdo);
   })->throws(Exception::class);
 
   it('should throw with invalid argument name', function () {
-    StoredProcedure::call('get_test_rows')
+    StoredProcedure::call('get_test_rows', $this->myPdo)
       ->with('invalid', '123');
   })->throws(Exception::class);
 
   it('should throw with invalid argument type', function () {
-    StoredProcedure::call('get_test_rows')
+    StoredProcedure::call('get_test_rows', $this->myPdo)
       ->with('keyInput', 123);
   })->throws(Exception::class);
 
@@ -35,8 +39,12 @@ describe('Exceptions', function () {
 
 describe('getArguments()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   it('should return an array of provided (and validated arguments)', function () {
-    $sp = StoredProcedure::call('get_test_rows');
+    $sp = StoredProcedure::call('get_test_rows', $this->myPdo);
 
     $args1 = $sp->with('keyInput', '123')->getArguments();
 
@@ -67,10 +75,14 @@ describe('getArguments()', function () {
 
 describe('SQL', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   it('should generate valid SQL statements', function () {
     $bindBuilder = new PDOBindBuilder();
 
-    $sql = StoredProcedure::call('get_test_rows')
+    $sql = StoredProcedure::call('get_test_rows', $this->myPdo)
       ->with('keyInput', '123')
       ->with('valueInput', '%')
       ->getSql($bindBuilder);
@@ -91,8 +103,12 @@ describe('SQL', function () {
 
 describe('Results', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   it('should return empty array if no value found', function () {
-    $results = StoredProcedure::call('get_test_rows')
+    $results = StoredProcedure::call('get_test_rows', $this->myPdo)
       ->with('keyInput', '123')
       ->with('valueInput', 'fff')
       ->execute();
@@ -103,7 +119,7 @@ describe('Results', function () {
   });
 
   it('should return array of objects', function () {
-    $results = StoredProcedure::call('get_test_rows')
+    $results = StoredProcedure::call('get_test_rows', $this->myPdo)
       ->with('keyInput', 'test')
       ->execute();
 

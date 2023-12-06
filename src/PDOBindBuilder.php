@@ -10,7 +10,7 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
 
   private array $data = [];
   private array $prefixCounter = [];
-  private string $phPrefix = ":placeholder___";
+  private string $defaultPrefix = "placeholder";
 
 
   /**
@@ -21,17 +21,8 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
    *
    * @return string The generated PDO named parameter.
    */
-  public function addValue($value, int $type = PDO::PARAM_STR): string {
-    $this->checkType($type);
-
-    $placeholder = $this->phPrefix . (count($this->data) + 1);
-
-    $this->data[$placeholder] = [
-      'value' => $value,
-      'type' => $type,
-    ];
-
-    return $placeholder;
+  public function addValue(mixed $value, int $type = PDO::PARAM_STR): string {
+    return $this->addValueWithPrefix($value, $this->defaultPrefix, $type);
   }
 
 
@@ -45,11 +36,12 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
    * @return string The generated PDO named parameter.
    */
   public function addValueWithPrefix(
-    $value,
+    mixed $value,
     string $prefix,
     int $type = PDO::PARAM_STR,
   ): string {
     $this->checkType($type);
+    $this->checkValueWithType($value, $type);
 
     // Remove non-alphanumeric characters from prefix
     $prefixAlpha = preg_replace('/[^a-zA-Z0-9_]/', '_', $prefix);
@@ -127,7 +119,7 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
    *
    * @return void
    */
-  private function checkType(int $type) {
+  private function checkType(int $type): void {
     if (
       !in_array(
         $type,
@@ -145,6 +137,57 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
       )
     ) {
       throw new Exception("Invalid PDO data type: {$type}");
+    }
+  }
+
+
+  private function checkValueWithType(
+    mixed $value,
+    int $type = PDO::PARAM_STR,
+  ): void {
+    $isInvalid = FALSE;
+
+    switch ($type) {
+      case PDO::PARAM_BOOL:
+        $isInvalid = !is_bool($value);
+        break;
+
+      case PDO::PARAM_NULL:
+        $isInvalid = !is_null($value);
+        break;
+
+      case PDO::PARAM_INT:
+        $isInvalid = !is_int($value);
+        break;
+
+      case PDO::PARAM_STR_CHAR:
+      case PDO::PARAM_STR_NATL:
+      case PDO::PARAM_STR:
+        $isInvalid = !(is_string($value) || is_numeric($value));
+        break;
+
+      default:
+        $isInvalid = TRUE;
+        break;
+    }
+
+    if ($isInvalid) {
+      $humanPdoType = [
+        PDO::PARAM_BOOL => 'boolean',
+        PDO::PARAM_NULL => 'null',
+        PDO::PARAM_INT => 'integer',
+        PDO::PARAM_STR => 'string',
+        PDO::PARAM_LOB => 'lob',
+        PDO::PARAM_STMT => 'statement',
+        PDO::PARAM_INPUT_OUTPUT => 'input/output',
+        PDO::PARAM_STR_CHAR => 'string or character',
+        PDO::PARAM_STR_NATL => 'string or national character',
+      ];
+      $valueType = gettype($value);
+      $expectedPdoType = $humanPdoType[$type] ?? $type;
+      throw new Exception(
+        "Invalid value type for PDO data type: {$expectedPdoType} ({$valueType})",
+      );
     }
   }
 

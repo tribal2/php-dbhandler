@@ -2,9 +2,6 @@
 
 namespace Tribal2\DbHandler\Interfaces;
 
-use PDO;
-use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
-
 interface StoredProcedureArgumentInterface {
 
 
@@ -23,10 +20,8 @@ interface StoredProcedureArgumentInterface {
 
 
   public static function getAllFor(
-    string $dbName,
     string $procedureName,
-    ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
+    SchemaInterface $schema,
   ): array;
 
 

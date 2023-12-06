@@ -7,6 +7,7 @@ use Tribal2\DbHandler\Factories\ColumnsFactory;
 use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 
 abstract class QueryModAbstract extends QueryAbstract {
 
@@ -18,13 +19,13 @@ abstract class QueryModAbstract extends QueryAbstract {
 
 
   public function __construct(
-    ?PDO $pdo = NULL,
+    PDOWrapperInterface $pdo,
     ?CommonInterface $common = NULL,
     ?ColumnsFactoryInterface $columnsFactory = NULL,
   ) {
     parent::__construct($pdo, $common);
 
-    $this->_columnsFactory = $columnsFactory ?? new ColumnsFactory();
+    $this->_columnsFactory = $columnsFactory ?? new ColumnsFactory($pdo);
   }
 
 

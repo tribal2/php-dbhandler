@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Factories\ColumnsFactory;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Update;
 use Tribal2\DbHandler\Queries\Where;
@@ -16,10 +17,15 @@ afterAll(function () {
 
 describe('Update', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->columnsFactory = new ColumnsFactory($this->myPdo);
+  });
+
   test('update records with Where', function () {
     $where = Where::equals('test_table_id', 1);
 
-    $updateResult = Update::_table('test_table')
+    $updateResult = Update::_table('test_table', $this->myPdo, $this->columnsFactory)
       ->set('value', 'updated value')
       ->where($where)
       ->execute();
@@ -27,7 +33,7 @@ describe('Update', function () {
     expect($updateResult)->toBeInt();
     expect($updateResult)->toBe(1);
 
-    $updatedRow = Select::_from('test_table')
+    $updatedRow = Select::_from('test_table', $this->myPdo)
       ->where($where)
       ->fetchFirst();
 
@@ -36,14 +42,14 @@ describe('Update', function () {
   });
 
   test('update all records', function () {
-    $updateResult = Update::_table('test_table')
+    $updateResult = Update::_table('test_table', $this->myPdo, $this->columnsFactory)
       ->set('value', 'updated value')
       ->execute();
 
     expect($updateResult)->toBeInt();
     expect($updateResult)->toBe(1);
 
-    $updatedRows = Select::_from('test_table')
+    $updatedRows = Select::_from('test_table', $this->myPdo)
       ->where(Where::equals('value', 'updated value'))
       ->fetchAll();
 
