@@ -52,7 +52,7 @@ class Schema extends QueryAbstract implements SchemaInterface {
     );
     $this->_query = "SHOW TABLES LIKE {$tablePlaceholder};";
 
-    $resultArr = parent::_execute($bindBuilder, $this->_pdo);
+    $resultArr = parent::_execute($bindBuilder);
 
     return count($resultArr) > 0;
   }
@@ -76,7 +76,7 @@ class Schema extends QueryAbstract implements SchemaInterface {
           AND SPECIFIC_NAME = {$namePlaceholder};
     ";
 
-    return parent::_execute($bindBuilder, $this->_pdo);
+    return parent::_execute($bindBuilder);
   }
 
 

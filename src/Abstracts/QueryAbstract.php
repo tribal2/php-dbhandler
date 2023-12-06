@@ -37,11 +37,8 @@ abstract class QueryAbstract {
 
   protected function _execute(
     ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDOWrapperInterface $pdo = NULL,
     ?int $fetchMode = PDO::FETCH_OBJ,
   ): array|int {
-    $_pdo = $pdo ?? $this->_pdo;
-
     // Before execute hook
     $this->beforeExecute();
 
@@ -50,7 +47,7 @@ abstract class QueryAbstract {
     $query = $this->getSql($bindBuilder);
 
     // Execute query
-    return $_pdo->execute($query, $bindBuilder, $fetchMode);
+    return $this->_pdo->execute($query, $bindBuilder, $fetchMode);
   }
 
 
