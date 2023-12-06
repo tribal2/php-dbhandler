@@ -22,8 +22,8 @@ describe('Where::getSql()', function () {
   test('equals/notEquals with an array of values', function () {
     $values = [
       'value',
+      'value2',
       123,
-      TRUE,
     ];
 
     // EQUALS
@@ -201,6 +201,28 @@ describe('Where::verify sql after binding values', function () {
 
     expect($sql)->toEqual("`column` IN (:column___1, :column___2)");
     expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IN ('first', 'second')");
+  });
+
+  test('null values', function () {
+    $clause = Where::isNull('column');
+    $sql = $clause->getSql($this->bindBuilder);
+
+    expect($sql)->toEqual("`column` IS :column___1");
+    expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IS NULL");
+
+    $clause = Where::isNotNull('column');
+    $sql = $clause->getSql($this->bindBuilder);
+
+    expect($sql)->toEqual("`column` IS NOT :column___2");
+    expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` IS NOT NULL");
+  });
+
+  test('boolean values', function () {
+    $clause = Where::equals('column', TRUE);
+    $sql = $clause->getSql($this->bindBuilder);
+
+    expect($sql)->toEqual("`column` = :column___1");
+    expect($this->bindBuilder->debugQuery($sql))->toEqual("`column` = 1");
   });
 
 });
