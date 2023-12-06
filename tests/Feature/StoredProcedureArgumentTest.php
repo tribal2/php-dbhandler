@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
 use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Queries\Schema;
 
 require_once __DIR__ . '/../Feature/_DbTestSchema.php';
 
@@ -16,9 +17,10 @@ afterAll(function () {
 describe('Static methods', function () {
 
   it('should fetch stored procedure arguments', function () {
+    $schema = new Schema(DbTestSchema::getPdoWrapper());
     $arguments = StoredProcedureArgument::getAllFor(
-      PDOSingleton::getDbName(),
       'get_test_rows',
+      $schema,
     );
 
     expect($arguments)
@@ -31,9 +33,10 @@ describe('Static methods', function () {
 describe('addValue() Exceptions', function () {
 
   beforeEach(function () {
+    $schema = new Schema(DbTestSchema::getPdoWrapper());
     $this->arguments = StoredProcedureArgument::getAllFor(
-      PDOSingleton::getDbName(),
       'get_test_rows',
+      $schema,
     );
   });
 
@@ -58,9 +61,10 @@ describe('addValue() Exceptions', function () {
 describe('addValue()', function () {
 
   beforeEach(function () {
+    $schema = new Schema(DbTestSchema::getPdoWrapper());
     $this->arguments = StoredProcedureArgument::getAllFor(
-      PDOSingleton::getDbName(),
       'get_test_rows',
+      $schema,
     );
   });
 
