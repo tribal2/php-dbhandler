@@ -2,7 +2,7 @@
 
 use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\DbConfig;
-use Tribal2\DbHandler\Helpers\Logger;
+use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOSingleton;
 
@@ -31,7 +31,7 @@ class DbTestSchema {
 
   public static function getPdoWrapper(): PDOWrapperInterface {
     $cfg = self::getConfig();
-    $logger = new Logger();
+    $logger = new LoggerNull();
 
     $myPdo = new PDOWrapper($cfg, $logger);
 

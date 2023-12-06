@@ -591,7 +591,6 @@ describe('DbHandler DELETE', function () {
 
 describe('DbHandler SELECT', function () {
   beforeEach(function () {
-    DbHandler::setLogger(new Logger());
     $this->db = DbHandler::getInstance();
   });
 
