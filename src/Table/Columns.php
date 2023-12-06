@@ -2,14 +2,15 @@
 
 namespace Tribal2\DbHandler\Table;
 
-use PDO;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
+use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 
-class Columns implements ColumnsInterface {
-
-  public string $table;
+class Columns extends QueryAbstract implements ColumnsInterface {
+  use QueryBeforeExecuteCheckTableTrait;
 
   public array $columns = [];
   public array $key = [];
@@ -17,16 +18,23 @@ class Columns implements ColumnsInterface {
   public array $autoincrement = [];
 
 
-  public static function for(string $table): Columns {
-    return new Columns($table);
+  public static function _for(
+    string $table,
+    PDOWrapperInterface $pdoWrapper
+  ): Columns {
+    $instance = new Columns($pdoWrapper);
+
+    return $instance->for($table);
   }
 
 
-  public function __construct(string $table) {
+  public function for(string $table): self {
     $this->table = $table;
 
-    $dbColumns = $this->fetch();
+    $dbColumns = parent::_execute();
     $this->parse($dbColumns);
+
+    return $this;
   }
 
 
@@ -35,13 +43,13 @@ class Columns implements ColumnsInterface {
   }
 
 
-  private function fetch(): array {
-    $pdo = PDOSingleton::get();
-    $dbName = PDOSingleton::getDBName();
-    $bindBuilder = new PDOBindBuilder();
+  public function getSql(
+    ?PDOBindBuilderInterface $bindBuilder = NULL,
+  ): string {
+    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
 
-    $dbPlaceholder = $bindBuilder->addValue($dbName);
-    $tablePlaceholder = $bindBuilder->addValue($this->table);
+    $db = $bindBuilder->addValueWithPrefix($this->_pdo->getDbName(), 'db');
+    $table = $bindBuilder->addValueWithPrefix($this->table, 'table');
 
     $query = "
       SELECT
@@ -51,16 +59,11 @@ class Columns implements ColumnsInterface {
       FROM
           information_schema.COLUMNS
       WHERE
-          TABLE_SCHEMA   = {$dbPlaceholder}
-          AND TABLE_NAME = {$tablePlaceholder};
+          TABLE_SCHEMA   = {$db}
+          AND TABLE_NAME = {$table};
     ";
 
-    $sth = $pdo->prepare($query);
-    $bindBuilder->bindToStatement($sth);
-
-    $sth->execute();
-
-    return $sth->fetchAll(PDO::FETCH_OBJ);
+    return $query;
   }
 
 
