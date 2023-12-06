@@ -10,6 +10,7 @@ use Tribal2\DbHandler\Queries\Where;
 require_once __DIR__ . '/_DbTestSchema.php';
 
 beforeAll(function () {
+  DbTestSchema::usePdoSingleton();
   DbTestSchema::up();
 });
 

@@ -4,6 +4,7 @@ use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\DbConfig;
 use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\PDOSingleton;
 
 class DbTestSchema {
 
@@ -19,6 +20,12 @@ class DbTestSchema {
     );
 
     return $dbConfig;
+  }
+
+
+  public static function usePdoSingleton(): void {
+    $cfg = self::getConfig();
+    PDOSingleton::configure($cfg);
   }
 
 
