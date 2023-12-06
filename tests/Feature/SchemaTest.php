@@ -15,12 +15,18 @@ afterAll(function () {
 
 describe('Schema', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('checkIfTableExists() - should return TRUE', function () {
-    expect(Schema::checkIfTableExists('test_table'))->toBe(TRUE);
+    expect(Schema::_checkIfTableExists('test_table', $this->myPdo))
+      ->toBe(TRUE);
   });
 
   test('checkIfTableExists() - should return FALSE', function () {
-    expect(Schema::checkIfTableExists('test_tablex'))->toBe(FALSE);
+    expect(Schema::_checkIfTableExists('test_tablex', $this->myPdo))
+      ->toBe(FALSE);
   });
 
 });

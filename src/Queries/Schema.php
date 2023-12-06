@@ -3,29 +3,29 @@
 namespace Tribal2\DbHandler\Queries;
 
 use Exception;
-use PDO;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
 
-class Schema {
+class Schema extends QueryAbstract {
+  use QueryBeforeExecuteDoNothingTrait;
 
-  private PDO $_pdo;
-  private PDOBindBuilderInterface $_bindBuilder;
+  private string $_query;
 
 
-  public static function checkIfTableExists(string $table): bool {
-    $schema = new self();
-    return $schema->_checkIfTableExists($table);
+  public static function _checkIfTableExists(
+    string $table,
+    PDOWrapperInterface $pdo,
+  ): bool {
+    $schema = new self($pdo);
+    return $schema->checkIfTableExists($table);
   }
 
 
-  public function __construct(
-    ?PDO $pdo = NULL,
-    ?PDOBindBuilderInterface $bindBuilder = NULL
-  ) {
-    $this->_pdo = $pdo ?? PDOSingleton::get();
-    $this->_bindBuilder = $bindBuilder ?? new PDOBindBuilder();
+  public function getSql(?PDOBindBuilderInterface $_ = NULL): string {
+    return $this->_query;
   }
 
 
@@ -36,16 +36,17 @@ class Schema {
    * @return bool True if the table exists, false otherwise
    * @throws Exception
    */
-  public function _checkIfTableExists(string $table): bool {
-    $tablePlaceholder = $this->_bindBuilder->addValue($table);
-    $query = "SHOW TABLES LIKE {$tablePlaceholder};";
+  public function checkIfTableExists(string $table): bool {
+    $bindBuilder = new PDOBindBuilder();
+    $tablePlaceholder = $bindBuilder->addValueWithPrefix(
+      $table,
+      'table',
+    );
+    $this->_query = "SHOW TABLES LIKE {$tablePlaceholder};";
 
-    $sth = $this->_pdo->prepare($query);
-    $this->_bindBuilder->bindToStatement($sth);
+    $resultArr = parent::_execute($bindBuilder, $this->_pdo);
 
-    $sth->execute();
-
-    return ($sth->rowCount() === 1);
+    return count($resultArr) > 0;
   }
 
 
