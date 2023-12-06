@@ -15,8 +15,12 @@ afterAll(function () {
 
 describe('Delete', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
   test('delete records with Where', function () {
-    $deleteCount = Delete::_from('test_table')
+    $deleteCount = Delete::_from('test_table', $this->myPdo)
       ->where(Where::equals('test_table_id', 1))
       ->execute();
 
@@ -25,7 +29,7 @@ describe('Delete', function () {
   });
 
   test('delete multiple records', function () {
-    $deleteCount = Delete::_from('test_table_no_auto_increment')
+    $deleteCount = Delete::_from('test_table_no_auto_increment', $this->myPdo)
       ->where(Where::like('key', 'test%'))
       ->execute();
 

@@ -7,16 +7,18 @@ use PDO;
 use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 
 class Select extends QueryAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckTableTrait;
 
   /**
    * Columns to select
@@ -36,7 +38,7 @@ class Select extends QueryAbstract implements QueryInterface {
 
   public static function _from(
     string $table,
-    ?PDO $pdo = NULL,
+    PDOWrapperInterface $pdo,
     ?CommonInterface $common = NULL,
   ): self {
     $select = new self($pdo, $common);
@@ -121,14 +123,9 @@ class Select extends QueryAbstract implements QueryInterface {
   }
 
 
-  public function execute(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDO $pdo = NULL,
-  ): array {
-    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
-
+  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): array {
     // Return an array with values depending on the fetch method
-    return $executedPdoStatement->fetchAll($this->fetchMethod);
+    return parent::_execute($bindBuilder, $this->fetchMethod);
   }
 
 

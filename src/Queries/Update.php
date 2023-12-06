@@ -8,21 +8,24 @@ use Tribal2\DbHandler\Abstracts\QueryModAbstract;
 use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 
 class Update extends QueryModAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckTableTrait;
 
   private array $values = [];
   private ?WhereInterface $whereClause = NULL;
 
 
-  public static function _table(string $table,
-    ?PDO $pdo = NULL,
+  public static function _table(
+    string $table,
+    PDOWrapperInterface $pdo,
+    ColumnsFactoryInterface $columnsFactory,
     ?CommonInterface $common = NULL,
-    ?ColumnsFactoryInterface $columnsFactory = NULL,
   ): self {
     $instance = new self($pdo, $common, $columnsFactory);
     $instance->table($table);
@@ -96,14 +99,9 @@ class Update extends QueryModAbstract implements QueryInterface {
   }
 
 
-  public function execute(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDO $pdo = NULL,
-  ): int {
-    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
-
+  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): int {
     // Return the number of affected rows
-    return $executedPdoStatement->rowCount();
+    return parent::_execute($bindBuilder);
   }
 
 

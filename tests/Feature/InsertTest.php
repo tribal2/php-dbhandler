@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Factories\ColumnsFactory;
 use Tribal2\DbHandler\Queries\Insert;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
@@ -16,12 +17,17 @@ afterAll(function () {
 
 describe('value()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->columnsFactory = new ColumnsFactory($this->myPdo);
+  });
+
   test('insert records in an autoincremented table', function () {
-    $insert = Insert::_into('test_table')
+    $insert = Insert::_into('test_table', $this->myPdo, $this->columnsFactory)
       ->value('key', 'this is a test key')
       ->value('value', 'this is a test value');
 
-    $select = Select::_from('test_table');
+    $select = Select::_from('test_table', $this->myPdo);
 
     // First row
     $insertResult1 = $insert->execute();
@@ -45,12 +51,12 @@ describe('value()', function () {
   });
 
   test('insert records in NON autoincremented table without collision', function () {
-    $insert = Insert::_into('test_table_no_auto_increment')
+    $insert = Insert::_into('test_table_no_auto_increment', $this->myPdo, $this->columnsFactory)
       ->value('test_table_id', 3)
       ->value('key', 'this is a test key')
       ->value('value', 'this is a test value');
 
-    $select = Select::_from('test_table_no_auto_increment');
+    $select = Select::_from('test_table_no_auto_increment', $this->myPdo);
 
     // First row
     $insertResult1 = $insert->execute();
@@ -75,7 +81,7 @@ describe('value()', function () {
   });
 
   test('insert records in NON autoincremented table WITH collision should throw', function () {
-    $insert = Insert::_into('test_table_no_auto_increment')
+    $insert = Insert::_into('test_table_no_auto_increment', $this->myPdo, $this->columnsFactory)
       ->value('test_table_id', 5)
       ->value('key', 'this is a test key')
       ->value('value', 'this is a test value');
@@ -96,14 +102,19 @@ describe('value()', function () {
 
 describe('values()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->columnsFactory = new ColumnsFactory($this->myPdo);
+  });
+
   test('insert records in an autoincremented table', function () {
-    $insert = Insert::_into('test_table')
+    $insert = Insert::_into('test_table', $this->myPdo, $this->columnsFactory)
       ->values([
         'key' => 'values()',
         'value' => 'this is a test value',
       ]);
 
-    $select = Select::_from('test_table')
+    $select = Select::_from('test_table', $this->myPdo)
       ->where(Where::equals('key', 'values()'));
 
     // First row
@@ -128,14 +139,14 @@ describe('values()', function () {
   });
 
   test('insert records in NON autoincremented table without collision', function () {
-    $insert = Insert::_into('test_table_no_auto_increment')
+    $insert = Insert::_into('test_table_no_auto_increment', $this->myPdo, $this->columnsFactory)
       ->values([
         'test_table_id' => 333,
         'key' => 'xxx 333',
         'value' => 'this is a test value 333',
       ]);
 
-    $select = Select::_from('test_table_no_auto_increment')
+    $select = Select::_from('test_table_no_auto_increment', $this->myPdo)
       ->where(Where::like('key', 'xxx%'));
 
     // First row
@@ -165,7 +176,7 @@ describe('values()', function () {
   });
 
   test('insert records in NON autoincremented table WITH collision should throw', function () {
-    $insert = Insert::_into('test_table_no_auto_increment')
+    $insert = Insert::_into('test_table_no_auto_increment', $this->myPdo, $this->columnsFactory)
       ->values([
         'test_table_id' => 555,
         'key' => 'xxx 555',
@@ -188,8 +199,13 @@ describe('values()', function () {
 
 describe('rows()', function () {
 
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->columnsFactory = new ColumnsFactory($this->myPdo);
+  });
+
   test('insert multiple records in an autoincremented table', function () {
-    $insertResult = Insert::_into('test_table')
+    $insertResult = Insert::_into('test_table', $this->myPdo, $this->columnsFactory)
       ->rows([
         ['key' => 'rows() test 1', 'value' => 'test value 1'],
         ['key' => 'rows() test 2', 'value' => 'test value 2'],
@@ -202,7 +218,7 @@ describe('rows()', function () {
     expect($insertResult)->toBe(3);
 
     // check if the actual records were inserted
-    $records = Select::_from('test_table')
+    $records = Select::_from('test_table', $this->myPdo)
       ->where(Where::like('key', 'rows() test%'))
       ->fetchAll();
 

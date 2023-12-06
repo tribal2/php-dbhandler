@@ -4,6 +4,7 @@ use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\Queries\Insert;
 
@@ -12,10 +13,10 @@ describe('Builder', function () {
 
   test('constructor', function () {
     $insert = new Insert(
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class),
       Mockery::mock(WhereFactoryInterface::class),
+      Mockery::mock(CommonInterface::class),
     );
 
     expect($insert)->toBeInstanceOf(Insert::class);
@@ -31,10 +32,10 @@ describe('Insert values', function () {
 
     $this->insert = Insert::_into(
       'test_table',
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
       Mockery::mock(WhereFactoryInterface::class),
+      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
     );
   });
 
@@ -82,10 +83,10 @@ describe('Insert values', function () {
     $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]);
     $values = Insert::_into(
       'test_table',
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
       Mockery::mock(WhereFactoryInterface::class),
+      Mockery::mock(CommonInterface::class, [ 'checkValue' => PDO::PARAM_STR ]),
     )
       ->value('column1', 'value1')
       ->getValues();
@@ -102,10 +103,10 @@ describe('Insert values', function () {
 
     Insert::_into(
       'test_table',
-      Mockery::mock(PDO::class),
-      $mockedCommon,
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
       Mockery::mock(WhereFactoryInterface::class),
+      $mockedCommon,
     )->value('value', [ 1, 2, 3 ]);
   })->throws(Exception::class);
 
@@ -147,10 +148,10 @@ describe('SQL', function () {
 
     $this->insert = Insert::_into(
       'test_table',
-      Mockery::mock(PDO::class),
-      $mockCommon,
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
       Mockery::mock(WhereFactoryInterface::class),
+      $mockCommon,
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)

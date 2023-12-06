@@ -7,19 +7,21 @@ use PDO;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 
 class Delete extends QueryAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckTableTrait;
 
   private ?WhereInterface $whereClause = NULL;
 
 
   public static function _from(
     string $table,
-    ?PDO $pdo = NULL,
+    PDOWrapperInterface $pdo,
     ?CommonInterface $common = NULL,
   ): self {
     $select = new self($pdo, $common);
@@ -58,14 +60,9 @@ class Delete extends QueryAbstract implements QueryInterface {
   }
 
 
-  public function execute(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDO $pdo = NULL,
-  ): int {
-    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
-
+  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): int {
     // Return the number of affected rows
-    return $executedPdoStatement->rowCount();
+    return parent::_execute($bindBuilder);
   }
 
 

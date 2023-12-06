@@ -4,6 +4,7 @@ use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\ColumnsInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Update;
 
@@ -11,7 +12,7 @@ describe('Update Builder', function () {
 
   test('static factory', function () {
     $update = new Update(
-      Mockery::mock(PDO::class),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(CommonInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class),
     );
@@ -29,9 +30,9 @@ describe('set()', function () {
 
     $update = Update::_table(
       'test_table',
-      Mockery::mock(PDO::class),
-      Mockery::mock(CommonInterface::class),
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(CommonInterface::class),
     );
 
     $update->set('invalid_key', 'updated_key');
@@ -53,9 +54,9 @@ describe('set()', function () {
 
     $update = Update::_table(
       'test_table',
-      Mockery::mock(PDO::class),
-      $mockCommon,
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      $mockCommon,
     );
 
     $update->set('key', [ 'updated_key' ]);
@@ -81,9 +82,9 @@ describe('SQL', function () {
 
     $this->update = Update::_table(
       'test_table',
-      Mockery::mock(PDO::class),
-      $mockCommon,
+      Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      $mockCommon,
     );
 
     $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class)

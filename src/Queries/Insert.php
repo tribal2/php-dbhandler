@@ -9,12 +9,14 @@ use Tribal2\DbHandler\Factories\WhereFactory;
 use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\PDOSingleton;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 
 class Insert extends QueryModAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckTableTrait;
 
   // Properties
   private array $values = [ [] ];
@@ -23,12 +25,12 @@ class Insert extends QueryModAbstract implements QueryInterface {
 
   public static function _into(
     string $table,
-    ?PDO $pdo = NULL,
-    ?CommonInterface $common = NULL,
-    ?ColumnsFactoryInterface $columnsFactory = NULL,
+    PDOWrapperInterface $pdo,
+    ColumnsFactoryInterface $columnsFactory,
     ?WhereFactoryInterface $whereFactory = NULL,
+    ?CommonInterface $common = NULL,
   ): self {
-    $insert = new self($pdo, $common, $columnsFactory, $whereFactory);
+    $insert = new self($pdo, $columnsFactory, $whereFactory, $common);
     $insert->into($table);
 
     return $insert;
@@ -36,10 +38,10 @@ class Insert extends QueryModAbstract implements QueryInterface {
 
 
   public function __construct(
-    ?PDO $pdo = NULL,
-    ?CommonInterface $common = NULL,
-    ?ColumnsFactoryInterface $columnsFactory = NULL,
+    PDOWrapperInterface $pdo,
+    ColumnsFactoryInterface $columnsFactory = NULL,
     ?WhereFactoryInterface $whereFactory = NULL,
+    ?CommonInterface $common = NULL,
   ) {
     parent::__construct($pdo, $common, $columnsFactory);
     $this->_whereFactory = $whereFactory ?? new WhereFactory();
@@ -148,17 +150,12 @@ class Insert extends QueryModAbstract implements QueryInterface {
   }
 
 
-  public function execute(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?PDO $pdo = NULL,
-  ): int {
+  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): int {
     // Check if there are collisions
     $this->checkForCollisions();
 
-    $executedPdoStatement = parent::_execute($bindBuilder, $pdo);
-
     // Return the number of affected rows
-    return $executedPdoStatement->rowCount();
+    return parent::_execute($bindBuilder);
   }
 
 
