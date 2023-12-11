@@ -8,7 +8,7 @@ use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 
-class DbTransaction {
+class Transaction {
 
   // Dependencies
   private static PDOWrapperInterface $pdoWrapper;

@@ -1,27 +1,40 @@
 <?php
 
-use Tribal2\DbHandler\DbTransaction;
+use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOSingleton;
 
 describe('CommitsMode', function () {
 
+  beforeEach(function () {
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+  });
+
   test('getCommitsMode()', function () {
-    expect(DbTransaction::getCommitsMode())->toBe(PDOCommitModeEnum::ON);
+    expect($this->transaction->getCommitsMode())->toBe(PDOCommitModeEnum::ON);
   });
 
   test('setCommitsModeOff()', function () {
-    DbTransaction::setCommitsModeOff();
-    expect(DbTransaction::getCommitsMode())->toBe(PDOCommitModeEnum::OFF);
+    $this->transaction->setCommitsModeOff();
+    expect($this->transaction->getCommitsMode())->toBe(PDOCommitModeEnum::OFF);
   });
 
   test('setCommitsModeOn()', function () {
-    DbTransaction::setCommitsModeOn();
-    expect(DbTransaction::getCommitsMode())->toBe(PDOCommitModeEnum::ON);
+    $this->transaction->setCommitsModeOn();
+    expect($this->transaction->getCommitsMode())->toBe(PDOCommitModeEnum::ON);
   });
 });
 
 describe('begin()', function () {
+
+  beforeEach(function () {
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+  });
 
   test('with no active transaction', function () {
     $pdoMock = Mockery::mock(PDO::class);
@@ -29,7 +42,7 @@ describe('begin()', function () {
     $pdoMock->shouldReceive('beginTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::begin())->toBeTrue();
+    expect($this->transaction->begin())->toBeTrue();
   });
 
   test('with an active transaction', function () {
@@ -37,12 +50,18 @@ describe('begin()', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::begin())->toBeFalse();
+    expect($this->transaction->begin())->toBeFalse();
   });
 
 });
 
 describe('commit()', function () {
+
+  beforeEach(function () {
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+  });
 
   test('ok', function () {
     $pdoMock = Mockery::mock(PDO::class);
@@ -50,7 +69,7 @@ describe('commit()', function () {
     $pdoMock->shouldReceive('commit')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::commit())->toBeTrue();
+    expect($this->transaction->commit())->toBeTrue();
   });
 
   test('with commits mode off', function () {
@@ -58,14 +77,20 @@ describe('commit()', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::setCommitsModeOff();
+    $this->transaction->setCommitsModeOff();
 
-    expect(DbTransaction::commit())->toBeFalse();
+    expect($this->transaction->commit())->toBeFalse();
   });
 
 });
 
 describe('rollback()', function () {
+
+  beforeEach(function () {
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+  });
 
   test('with an active transaction', function () {
     $pdoMock = Mockery::mock(PDO::class);
@@ -73,8 +98,8 @@ describe('rollback()', function () {
     $pdoMock->shouldReceive('rollBack')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::begin();
-    expect(DbTransaction::rollback())->toBeTrue();
+    $this->transaction->begin();
+    expect($this->transaction->rollback())->toBeTrue();
   });
 
   test('with no active transaction', function () {
@@ -82,19 +107,25 @@ describe('rollback()', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::rollback())->toBeFalse();
+    expect($this->transaction->rollback())->toBeFalse();
   });
 
 });
 
 describe('check()', function () {
 
+  beforeEach(function () {
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+  });
+
   test('returns true when a transaction is active', function () {
     $pdoMock = Mockery::mock(PDO::class);
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::check())->toBeTrue();
+    expect($this->transaction->check())->toBeTrue();
   });
 
   test('returns false when no transaction is active', function () {
@@ -102,7 +133,7 @@ describe('check()', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
     PDOSingleton::set($pdoMock);
 
-    expect(DbTransaction::check())->toBeFalse();
+    expect($this->transaction->check())->toBeFalse();
   });
 
 });
@@ -110,8 +141,13 @@ describe('check()', function () {
 describe('error handling with $throw flag enabled', function () {
 
   beforeEach(function () {
-    DbTransaction::$throw = TRUE;
-    DbTransaction::setCommitsModeOn();
+    $this->transaction = new Transaction(
+      Mockery::mock(PDOWrapperInterface::class),
+    );
+
+    $this->transaction->$throw = TRUE;
+
+    $this->transaction->setCommitsModeOn();
   });
 
   test('begin() with an active transaction already started', function () {
@@ -119,7 +155,7 @@ describe('error handling with $throw flag enabled', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::begin();
+    $this->transaction->begin();
   })->throws(Exception::class);
 
   test('commit() with no active transaction started', function () {
@@ -127,7 +163,7 @@ describe('error handling with $throw flag enabled', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::commit();
+    $this->transaction->commit();
   })->throws(Exception::class);
 
   test('commit() with commitMode = OFF', function () {
@@ -135,9 +171,9 @@ describe('error handling with $throw flag enabled', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::setCommitsModeOff();
+    $this->transaction->setCommitsModeOff();
 
-    DbTransaction::commit();
+    $this->transaction->commit();
   })->throws(Exception::class);
 
   test('rollback() with no active transaction started', function () {
@@ -145,7 +181,7 @@ describe('error handling with $throw flag enabled', function () {
     $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
     PDOSingleton::set($pdoMock);
 
-    DbTransaction::rollback();
+    $this->transaction->rollback();
   })->throws(Exception::class);
 
 });
