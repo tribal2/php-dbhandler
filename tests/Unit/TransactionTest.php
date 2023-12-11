@@ -30,110 +30,101 @@ describe('CommitsMode', function () {
 
 describe('begin()', function () {
 
-  beforeEach(function () {
-    $this->transaction = new Transaction(
-      Mockery::mock(PDOWrapperInterface::class),
-    );
-  });
-
   test('with no active transaction', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-    $pdoMock->shouldReceive('beginTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => FALSE,
+      'beginTransaction' => TRUE,
+    ]);
 
-    expect($this->transaction->begin())->toBeTrue();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->begin())->toBeTrue();
   });
 
   test('with an active transaction', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => TRUE,
+    ]);
 
-    expect($this->transaction->begin())->toBeFalse();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->begin())->toBeFalse();
   });
 
 });
 
 describe('commit()', function () {
 
-  beforeEach(function () {
-    $this->transaction = new Transaction(
-      Mockery::mock(PDOWrapperInterface::class),
-    );
-  });
-
   test('ok', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    $pdoMock->shouldReceive('commit')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => TRUE,
+      'commit' => TRUE,
+    ]);
 
-    expect($this->transaction->commit())->toBeTrue();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->commit())->toBeTrue();
   });
 
   test('with commits mode off', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => TRUE,
+    ]);
 
-    $this->transaction->setCommitsModeOff();
+    $transaction = new Transaction($pdoMock);
 
-    expect($this->transaction->commit())->toBeFalse();
+    $transaction->setCommitsModeOff();
+
+    expect($transaction->commit())->toBeFalse();
   });
 
 });
 
 describe('rollback()', function () {
 
-  beforeEach(function () {
-    $this->transaction = new Transaction(
-      Mockery::mock(PDOWrapperInterface::class),
-    );
-  });
-
   test('with an active transaction', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    $pdoMock->shouldReceive('rollBack')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => TRUE,
+      'rollBack' => TRUE,
+    ]);
 
-    $this->transaction->begin();
-    expect($this->transaction->rollback())->toBeTrue();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->rollback())->toBeTrue();
   });
 
   test('with no active transaction', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => FALSE,
+    ]);
 
-    expect($this->transaction->rollback())->toBeFalse();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->rollback())->toBeFalse();
   });
 
 });
 
 describe('check()', function () {
 
-  beforeEach(function () {
-    $this->transaction = new Transaction(
-      Mockery::mock(PDOWrapperInterface::class),
-    );
-  });
-
   test('returns true when a transaction is active', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => TRUE,
+    ]);
 
-    expect($this->transaction->check())->toBeTrue();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->check())->toBeTrue();
   });
 
   test('returns false when no transaction is active', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-    PDOSingleton::set($pdoMock);
+    $pdoMock = Mockery::mock(PDOWrapperInterface::class, [
+      'inTransaction' => FALSE,
+    ]);
 
-    expect($this->transaction->check())->toBeFalse();
+    $transaction = new Transaction($pdoMock);
+
+    expect($transaction->check())->toBeFalse();
   });
 
 });
@@ -141,47 +132,38 @@ describe('check()', function () {
 describe('error handling with $throw flag enabled', function () {
 
   beforeEach(function () {
-    $this->transaction = new Transaction(
-      Mockery::mock(PDOWrapperInterface::class),
-    );
+    $this->transactionFactory = function (bool $inTransaction) {
+      $tx = new Transaction(
+        Mockery::mock(PDOWrapperInterface::class, [
+          'inTransaction' => $inTransaction,
+        ]),
+      );
 
-    $this->transaction->$throw = TRUE;
+      $tx->setThrowOnError(TRUE);
 
-    $this->transaction->setCommitsModeOn();
+      return $tx;
+    };
   });
 
   test('begin() with an active transaction already started', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
-
-    $this->transaction->begin();
+    $transaction = ($this->transactionFactory)(inTransaction: TRUE);
+    $transaction->begin();
   })->throws(Exception::class);
 
   test('commit() with no active transaction started', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-    PDOSingleton::set($pdoMock);
-
-    $this->transaction->commit();
+    $transaction = ($this->transactionFactory)(inTransaction: FALSE);
+    $transaction->commit();
   })->throws(Exception::class);
 
   test('commit() with commitMode = OFF', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(TRUE);
-    PDOSingleton::set($pdoMock);
-
-    $this->transaction->setCommitsModeOff();
-
-    $this->transaction->commit();
+    $transaction = ($this->transactionFactory)(inTransaction: TRUE);
+    $transaction->setCommitsModeOff();
+    $transaction->commit();
   })->throws(Exception::class);
 
   test('rollback() with no active transaction started', function () {
-    $pdoMock = Mockery::mock(PDO::class);
-    $pdoMock->shouldReceive('inTransaction')->andReturn(FALSE);
-    PDOSingleton::set($pdoMock);
-
-    $this->transaction->rollback();
+    $transaction = ($this->transactionFactory)(inTransaction: FALSE);
+    $transaction->rollback();
   })->throws(Exception::class);
 
 });
