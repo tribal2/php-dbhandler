@@ -11,8 +11,8 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 class Transaction {
 
   // Dependencies
-  private static PDOWrapperInterface $pdoWrapper;
-  private static ?LoggerInterface $logger = NULL;
+  private PDOWrapperInterface $pdoWrapper;
+  private ?LoggerInterface $logger = NULL;
 
 
   // Class properties
@@ -27,9 +27,7 @@ class Transaction {
     $this->pdoWrapper = $pdoWrapper;
 
     // Use default logger if none is provided
-    $this->logger = ($logger === NULL)
-      ? new LoggerNull()
-      : $logger;
+    $this->logger = $logger ?? new LoggerNull();
   }
 
 
@@ -48,21 +46,28 @@ class Transaction {
   }
 
 
-  public function begin(): bool {
-    $dbh = $this->pdoWrapper->getPdo();
+  public function setThrowOnError(bool $throw = TRUE): void {
+    $this->throw = $throw;
+  }
 
-    if ($dbh->inTransaction()) {
+
+  public function begin(): bool {
+    if ($this->pdoWrapper->inTransaction()) {
       return $this->errorHandler('There is already an active transaction');
     }
 
-    return $dbh->beginTransaction();
+    $result = $this->pdoWrapper->beginTransaction();
+
+    if (!$result) {
+      return $this->errorHandler('Failed to begin transaction');
+    }
+
+    return $result;
   }
 
 
   public function commit(): bool {
-    $dbh = $this->pdoWrapper->getPdo();
-
-    if (!$dbh->inTransaction()) {
+    if (!$this->pdoWrapper->inTransaction()) {
       return $this->errorHandler('There is no active transaction.');
     }
 
@@ -70,25 +75,33 @@ class Transaction {
       return $this->errorHandler('Commits are disabled');
     }
 
-    return $dbh->commit();
+    $result = $this->pdoWrapper->commit();
+
+    if (!$result) {
+      return $this->errorHandler('Failed to commit transaction');
+    }
+
+    return $result;
   }
 
 
   public function rollback(): bool {
-    $dbh = $this->pdoWrapper->getPdo();
-
-    if (!$dbh->inTransaction()) {
+    if (!$this->pdoWrapper->inTransaction()) {
       return $this->errorHandler('There is no active transaction');
     }
 
-    return $dbh->rollBack();
+    $result = $this->pdoWrapper->rollBack();
+
+    if (!$result) {
+      return $this->errorHandler('Failed to rollback transaction');
+    }
+
+    return $result;
   }
 
 
   public function check() {
-    $dbh = $this->pdoWrapper->getPdo();
-
-    return $dbh->inTransaction();
+    return $this->pdoWrapper->inTransaction();
   }
 
 
