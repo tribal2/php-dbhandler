@@ -3,7 +3,9 @@
     "description": "Library to interact with MySQL databases",
     "type": "library",
     "require": {
-        "panique/pdo-debug": "^0.2.0"
+        "panique/pdo-debug": "^0.2.0",
+        "psr/log": "^3.0",
+        "psr/simple-cache": "^3.0"
     },
     "require-dev": {
         "pestphp/pest": "^2.24",
