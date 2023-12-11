@@ -1,11 +1,9 @@
 <?php
 
+use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\DbHandler;
-use Tribal2\DbHandler\DbTransaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
-use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\Queries\Where;
 
 require_once __DIR__ . '/_DbTestSchema.php';
 
@@ -34,21 +32,21 @@ describe('DbHandler methods', function () {
   });
 
   test('disableCommits()', function () {
-    $prevStatus = DbTransaction::getCommitsMode();
+    $prevStatus = $this->db->getTransactionCommitsMode();
     expect($prevStatus)->toBe(PDOCommitModeEnum::ON);
 
     $this->db->disableCommits();
-    $newStatus = DbTransaction::getCommitsMode();
+    $newStatus = $this->db->getTransactionCommitsMode();
     expect($newStatus)->not()->toBe($prevStatus);
     expect($newStatus)->toBe(PDOCommitModeEnum::OFF);
   });
 
   test('enableCommits()', function () {
-    $prevStatus = DbTransaction::getCommitsMode();
+    $prevStatus = $this->db->getTransactionCommitsMode();
     expect($prevStatus)->toBe(PDOCommitModeEnum::OFF);
 
     $this->db->enableCommits();
-    $newStatus = DbTransaction::getCommitsMode();
+    $newStatus = $this->db->getTransactionCommitsMode();
     expect($newStatus)->not()->toBe($prevStatus);
     expect($newStatus)->toBe(PDOCommitModeEnum::ON);
   });
@@ -718,17 +716,14 @@ describe('DbHandler SELECT', function () {
     /**
      * Simulamos una instancia de la clase Logger
      */
-    $loggerMock = Mockery::mock(Logger::class);
-    $loggerMock->shouldReceive('log');
+    $loggerMock = Mockery::mock(LoggerInterface::class);
+    $loggerMock->shouldReceive('debug');
+    $loggerMock->shouldReceive('warning');
     DbHandler::setLogger($loggerMock);
 
     $results = $this->db->getDataRow('test_table');
 
-    $loggerMock->shouldHaveReceived('log', [
-      Mockery::any(),
-      Mockery::any(),
-      Logger::WARNING,
-    ]);
+    $loggerMock->shouldHaveReceived('warning')->once();
     expect($results)->toBeObject();
     expect($results)->toHaveKeys(['test_table_id', 'key', 'value', 'created_at']);
   });
@@ -925,15 +920,4 @@ describe('DbHandler handleException', function () {
     500
   );
 
-});
-
-
-describe('DbHandler static method queries', function () {
-  test('select', function () {
-    $result = DbHandler::select('test_table')
-      ->where(Where::equals('test_table_id', 1))
-      ->fetchValue('value');
-
-    expect($result)->toBe('Test value 1');
-  });
 });
