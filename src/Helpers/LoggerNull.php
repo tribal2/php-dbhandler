@@ -2,12 +2,19 @@
 
 namespace Tribal2\DbHandler\Helpers;
 
-use Tribal2\DbHandler\Interfaces\LoggerInterface;
+use Psr\Log\LoggerInterface;
+use Tribal2\DbHandler\Abstracts\LoggerAbstract;
 
-class LoggerNull implements LoggerInterface {
+class LoggerNull extends LoggerAbstract implements LoggerInterface {
 
 
-  public static function log($data = NULL, $title = '', $level = 'debug'): void {}
+  public function log(
+    $level,
+    string|\Stringable $message,
+    array $context = array()
+  ): void {
+    // do nothing
+  }
 
 
 }

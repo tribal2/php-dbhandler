@@ -5,7 +5,7 @@ namespace Tribal2\DbHandler\Core;
 use Exception;
 use PDO;
 use PDOStatement;
-use Tribal2\DbHandler\Helpers\Logger;
+use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\DbConfigInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
@@ -66,7 +66,7 @@ class PDOWrapper implements PDOWrapperInterface {
       // Return results
       return $this->_return($stmt, $fetchMode);
     } catch (Exception $e) {
-      $this->_logger->log($e->getMessage(), Logger::ERROR);
+      $this->_logger->error($e->getMessage());
       throw $e;
     }
   }
@@ -99,7 +99,7 @@ class PDOWrapper implements PDOWrapperInterface {
     // Throw if read only mode is enabled
     if ($this->_config->isReadOnly()) {
       $eMsg = "Can't execute statement. Read only mode is enabled.";
-      $this->_logger->log($eMsg, Logger::ERROR);
+      $this->_logger->error($eMsg);
       throw new Exception($eMsg);
     }
   }
@@ -109,26 +109,20 @@ class PDOWrapper implements PDOWrapperInterface {
     string $query,
     PDOBindBuilderInterface $bindBuilder,
   ): PDOStatement {
-    $this->_logger->log("Preparing query: $query", Logger::DEBUG);
+    $this->_logger->debug("Preparing query: $query");
 
     // Prepare statement
     $stmt = $this->_pdo->prepare($query);
 
     if (!$stmt) {
       $eMsg = "Error preparing statement: $query";
-      $this->_logger->log($eMsg, Logger::ERROR);
+      $this->_logger->error($eMsg);
       throw new Exception($eMsg);
     }
 
     // Bind params
-    $this->_logger->log(
-      "Binding params: " . json_encode($bindBuilder->getValues()),
-      Logger::DEBUG,
-    );
-    $this->_logger->log(
-      "Final query: " . $bindBuilder->debugQuery($query),
-      Logger::DEBUG,
-    );
+    $this->_logger->debug("Binding params: ", $bindBuilder->getValues());
+    $this->_logger->debug("Final query: " . $bindBuilder->debugQuery($query));
 
     $bindBuilder->bindToStatement($stmt);
 
@@ -137,11 +131,11 @@ class PDOWrapper implements PDOWrapperInterface {
 
 
   private function _execute(PDOStatement $stmt): void {
-    $this->_logger->log("Executing statement: {$stmt->queryString}", Logger::DEBUG);
+    $this->_logger->debug("Executing statement: {$stmt->queryString}");
 
     if (!$stmt->execute()) {
-      $eMsg = "Error executing statement: $stmt";
-      $this->_logger->log($eMsg, Logger::ERROR);
+      $eMsg = "Error executing statement: {$stmt->queryString}";
+      $this->_logger->error($eMsg);
       throw new Exception($eMsg);
     }
   }
@@ -160,10 +154,7 @@ class PDOWrapper implements PDOWrapperInterface {
       $result = $statement->rowCount();
     }
 
-    $this->_logger->log(
-      "Query executed successfully. {$resTitle}: {$result}.",
-      Logger::DEBUG,
-    );
+    $this->_logger->debug("Query executed successfully. {$resTitle}: {$result}.");
   }
 
 

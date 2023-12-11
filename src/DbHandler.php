@@ -6,9 +6,10 @@ use Exception;
 use PDO;
 use PDOException;
 use stdClass;
+use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
-use Tribal2\DbHandler\Helpers\Logger;
+use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\LoggerInterface;
@@ -102,7 +103,7 @@ class DbHandler {
    */
   public function __construct(PDO $pdo = NULL) {
     if (DbHandler::$logger === NULL) {
-      DbHandler::$logger = new Logger();
+      DbHandler::$logger = new LoggerNull();
     }
 
     if (DbHandler::$cache === NULL) {
@@ -113,13 +114,13 @@ class DbHandler {
       DbHandler::$common = new Common();
     }
 
-    self::$logger::log();
+    self::$logger->debug('');
     $this->setDBH($pdo);
   }
 
 
   private function setDBH(?PDO $pdo = NULL) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     // Si no se provee una instancia de PDO, usamos PDOSingleton
     $this->dbh = $pdo ?? PDOSingleton::get();
@@ -127,7 +128,7 @@ class DbHandler {
 
 
   private function resetDBH(?PDO $pdo = NULL) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     PDOSingleton::destroy();
 
@@ -141,42 +142,42 @@ class DbHandler {
 
 
   final public function disableCommits() {
-    self::$logger::log();
+    self::$logger->debug('');
     DbTransaction::setCommitsModeOff();
   }
 
 
   final public function enableCommits() {
-    self::$logger::log();
-    DbTransaction::setCommitsModeOn();
+    self::$logger->debug('');
+    self::$logger->debug('');
   }
 
 
   final public function transactionManager($action) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     switch($action) {
       case 'begin':
         if ($this->dbh->inTransaction()) {
-          self::$logger::log('>>> Ya hay una transacción iniciada.');
+          self::$logger->debug('>>> Ya hay una transacción iniciada.');
           return NULL;
         }
         return $this->dbh->beginTransaction();
 
       case 'commit':
         if (!$this->dbh->inTransaction()) {
-          self::$logger::log('>>> No hay ninguna transacción iniciada.');
+          self::$logger->debug('>>> No hay ninguna transacción iniciada.');
           return NULL;
         }
         if (DbTransaction::getCommitsMode() === PDOCommitModeEnum::OFF) {
-          self::$logger::log('>>> Los commits están desabilitados.');
+          self::$logger->debug('>>> Los commits están desabilitados.');
           return NULL;
         }
         return $this->dbh->commit();
 
       case 'rollback':
         if (!$this->dbh->inTransaction()) {
-          self::$logger::log('>>> No hay ninguna transacción iniciada.');
+          self::$logger->debug('>>> No hay ninguna transacción iniciada.');
           return NULL;
         }
         return $this->dbh->rollBack();
@@ -200,7 +201,7 @@ class DbHandler {
    */
   public function checkIfTableExists(string $table) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       return Schema::checkIfTableExists($table);
     }
@@ -220,7 +221,7 @@ class DbHandler {
    */
   public function getTableColumns(string $table): stdClass {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $inCache = self::$cache->get(__METHOD__, func_get_args());
       if (!empty($inCache)) { return $inCache; }
@@ -235,7 +236,7 @@ class DbHandler {
 
       self::$cache->set(__METHOD__, func_get_args(), $columns);
 
-      self::$logger::log($columns, "{$table} >>>");
+      self::$logger->debug("{$table} >>>", [ $columns ]);
       return $columns;
     }
 
@@ -257,7 +258,7 @@ class DbHandler {
    */
   public function checkIfExists(string $tab, $keyVal, $val = '') {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $baseQuery = "SELECT * FROM $tab WHERE ";
 
@@ -283,12 +284,12 @@ class DbHandler {
       $sth->execute();
       $exists = $sth->rowCount() > 0;
 
-      self::$logger::log($exists, '>>>');
+      self::$logger->debug('>>>', [ $exists ]);
       return $exists;
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -317,7 +318,7 @@ class DbHandler {
   ) {
     //@todo 3 Renombrar a getData() y hacer refactor
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $bindBuilder = new PDOBindBuilder();
 
@@ -394,8 +395,8 @@ class DbHandler {
       // Creamos la consulta y la ejecutamos
       $query = "SELECT $cols FROM $table $queryEnd;";
       $sth = $this->dbh->prepare($query);
-      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
-      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
+      self::$logger->debug('$query: ' . $query, $bindBuilder->getValues());
+      self::$logger->debug('Query: ' . $bindBuilder->debugQuery($query));
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
@@ -409,13 +410,13 @@ class DbHandler {
         $formato = $fetch_style;
       }
 
-      self::$logger::log($sth->rowCount(), 'Filas');
+      self::$logger->debug('Filas: ' . $sth->rowCount());
 
       return $sth->fetchAll($formato);
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -435,12 +436,8 @@ class DbHandler {
    * @return array|null Array con datos encontrados en la base de datos. Si no existen, se devuelve NULL
    */
   public function getData($table, $columns = '*', $where = '', $limit = 0, $sort = [], $fetch_style = TRUE) {
-    self::$logger::log();
-    self::$logger::log(
-      NULL,
-      '##DEPRECATION NOTICE## Rename method to getDataOrNull()',
-      Logger::WARNING,
-    );
+    self::$logger->debug('');
+    self::$logger->warning('##DEPRECATION NOTICE## Rename method to getDataOrNull()');
 
     $getDataArr = $this->getDataArr(
       $table,
@@ -471,7 +468,7 @@ class DbHandler {
    * @return array|null Array con datos encontrados en la base de datos. Si no existen, se devuelve NULL
    */
   public function getDataOrNull($table, $columns = '*', $where = '', $limit = 0, $sort = [], $fetch_style = TRUE) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $getDataArr = $this->getDataArr(
       $table,
@@ -496,7 +493,7 @@ class DbHandler {
    * @throws Exception
    */
   public function getDataRow($table, array $where = [], $columns = '*') {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $dbData = (is_array($table) || is_object($table))
       ? $this->getDataArr($table)
@@ -505,7 +502,7 @@ class DbHandler {
     $dbDataCount = count($dbData);
 
     if ($dbDataCount > 1) {
-      self::$logger::log(NULL, '>>> Este query genera más de 1 resultado.', Logger::WARNING);
+      self::$logger->warning('>>> Este query genera más de 1 resultado.');
     }
 
     return ($dbDataCount === 0)
@@ -528,7 +525,7 @@ class DbHandler {
     string $column,
     array $where = [],
   ): array {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $query = [
       'table' => $table,
@@ -557,7 +554,7 @@ class DbHandler {
     $where = NULL,
     $sort = [],
   ) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $tab = is_array($table) ? $table['table'] : $table;
     $col = is_array($table) ? $table['columns'] : $column;
@@ -590,7 +587,7 @@ class DbHandler {
     ];
     $dbData = $this->getDataArr($query);
 
-    self::$logger::log($dbData, '>>>');
+    self::$logger->debug('>>>', $dbData);
     return $dbData ? $dbData[0] : NULL;
   }
 
@@ -605,7 +602,7 @@ class DbHandler {
    */
   public function getDistincts($table, $column) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       // Validamos los parámetros
       $params = [$table, $column];
@@ -623,18 +620,18 @@ class DbHandler {
 
       // Creamos la consulta y la ejecutamos
       $query = "SELECT DISTINCT(`{$column}`) FROM {$table};";
-      self::$logger::log($query, '$query');
+      self::$logger->debug('$query: ' . $query);
       $sth = $this->dbh->prepare($query);
       $sth->execute();
 
-      self::$logger::log($sth->rowCount(), 'Filas');
+      self::$logger->debug('Filas: ' . $sth->rowCount());
       return ($sth->rowCount() > 0)
               ? $sth->fetchAll(PDO::FETCH_COLUMN)
               : NULL;
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -657,7 +654,7 @@ class DbHandler {
     array  $where = [],
   ) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $operatorToFunc = [
         'min' => 'MIN',
@@ -684,25 +681,25 @@ class DbHandler {
       // Creamos la consulta y la ejecutamos
       $query = "SELECT $sqlFunction($column) FROM $table$queryEnd;";
       $sth = $this->dbh->prepare($query);
-      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
+      self::$logger->debug('$query', [$query, $bindBuilder->getValues()]);
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      self::$logger::log($bindBuilder->debugQuery($query), 'Final query');
+      self::$logger->debug('Final query: ' . $bindBuilder->debugQuery($query));
       $sth->execute();
 
-      self::$logger::log($sth->rowCount(), 'Filas');
+      self::$logger->debug('Filas: ' . $sth->rowCount());
 
       $dbData = $sth->fetchAll(PDO::FETCH_COLUMN);
 
-      self::$logger::log($dbData, '>>>');
+      self::$logger->debug('>>>', $dbData);
 
       return $dbData ? $dbData[0] : NULL;
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -718,7 +715,7 @@ class DbHandler {
    */
   public function executeQuery(string $query, PDOBindBuilder $bindBuilder) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $this->checkIfInReadOnlyMode();
 
@@ -729,16 +726,16 @@ class DbHandler {
         throw new Exception('Tipo de query no permitido.');
       }
 
-      self::$logger::log([$query, $bindBuilder->getValues()], '$query');
+      self::$logger->debug('$query', [$query, $bindBuilder->getValues()]);
       $sth = $this->dbh->prepare($query);
 
       // Configuramos los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      self::$logger::log($bindBuilder->debugQuery($query), 'Final query');
+      self::$logger->debug('Final query: ' . $bindBuilder->debugQuery($query));
       $sth->execute();
 
-      self::$logger::log($sth->rowCount(), 'Líneas afectadas:');
+      self::$logger->debug('Líneas afectadas: ' . $sth->rowCount());
 
       return ($queryType === 'SELECT')
         ? $sth->fetchAll(PDO::FETCH_OBJ)
@@ -746,7 +743,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -766,7 +763,7 @@ class DbHandler {
    */
   public function callProcedure($procName, $params = '', $fetchObj = TRUE) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       // Configuramos los parámetros
       if(is_array($params)) {
@@ -780,7 +777,7 @@ class DbHandler {
       }
 
       $query = "CALL $procName($procParams);";
-      self::$logger::log($query, '$query');
+      self::$logger->debug('$query: ' . $query);
 
       $sth = $this->dbh->prepare($query);
 
@@ -788,12 +785,12 @@ class DbHandler {
       if(is_array($params)) {
         foreach($params as $key => $value) {
           $sth->bindValue(":{$key}", $value);
-          self::$logger::log($value, ":{$key}");
+          self::$logger->debug(":{$key}: $value");
         }
       }
 
       $sth->execute();
-      self::$logger::log($sth->rowCount(), 'Resultados');
+      self::$logger->debug('Resultados: ' . $sth->rowCount());
 
       // Configuramos el formato de respuesta
       $formato = $fetchObj ? PDO::FETCH_OBJ : PDO::FETCH_ASSOC;
@@ -804,7 +801,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -819,7 +816,7 @@ class DbHandler {
    */
   public function setData(string $table, $postData) {
     try{
-      self::$logger::log();
+      self::$logger->debug('');
 
       $bindBuilder = new PDOBindBuilder();
 
@@ -878,17 +875,17 @@ class DbHandler {
       $query = "INSERT INTO {$table} ({$qColumns}) VALUES ({$qParams});";
 
       $sth = $this->dbh->prepare($query);
-      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
+      self::$logger->debug('Query: ' . $bindBuilder->debugQuery($query));
 
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
 
       $sth->execute();
-      self::$logger::log('>>> OK');
+      self::$logger->debug('>>> OK');
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -913,13 +910,13 @@ class DbHandler {
    */
   public function setDataMulti(string $table, array $postData) {
     try{
-      self::$logger::log();
+      self::$logger->debug('');
 
       $this->checkIfInReadOnlyMode();
 
       // Nos aseguramos que $postData sea un array y contenga información
       if (!is_array($postData) || empty($postData)) {
-        self::$logger::log('>>> NO DATA');
+        self::$logger->debug('>>> NO DATA');
         return 'NO DATA';
       }
 
@@ -965,8 +962,8 @@ class DbHandler {
       $queryValuesList = implode(', ', $queryRows);
 
       $query = "INSERT INTO {$table} ({$queryColsList}) VALUES {$queryValuesList};";
-      self::$logger::log($query, '$query');
-      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
+      self::$logger->debug('$query: ' . $query);
+      self::$logger->debug('Query: ' . $bindBuilder->debugQuery($query));
       $sth = $this->dbh->prepare($query);
 
       // Hacemos bind de los parámetros
@@ -974,7 +971,7 @@ class DbHandler {
 
       // Ejecutamos el query
       $sth->execute();
-      self::$logger::log('>>> OK');
+      self::$logger->debug('>>> OK');
 
       // Devolvemos mensaje de confirmación
       $insertCount = count($data);
@@ -982,7 +979,7 @@ class DbHandler {
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1000,7 +997,7 @@ class DbHandler {
    */
   public function updateData($table, $putData, bool $ignoreNull = TRUE) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $this->checkIfInReadOnlyMode();
 
@@ -1094,16 +1091,16 @@ class DbHandler {
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
 
-      self::$logger::log($query, '$query');
-      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
+      self::$logger->debug('$query: ' . $query);
+      self::$logger->debug('Query: ' . $bindBuilder->debugQuery($query));
 
       // Ejecutamos el query
       $sth->execute();
-      self::$logger::log('>>> OK');
+      self::$logger->debug('>>> OK');
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1119,7 +1116,7 @@ class DbHandler {
    * @throws Exception
    */
   public function setUpdateData($table, array $dataArr, bool $ignoreNull = TRUE) {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $this->checkIfInReadOnlyMode();
 
@@ -1138,13 +1135,13 @@ class DbHandler {
     // Si ya existe un registro con el valor de las 'key columns'
     // suministradas, actualizamos datos...
     if (!empty($checkDataArr) && $this->checkIfExists($table, $checkDataArr)) {
-      self::$logger::log(">>> Ya existe, actualizando registro");
+      self::$logger->debug(">>> Ya existe, actualizando registro");
       $this->updateData($table, $dataArr, $ignoreNull);
     }
 
     // ..si no existe, registramos nuevos datos
     else {
-      self::$logger::log(">>> Creando registro");
+      self::$logger->debug(">>> Creando registro");
       $this->setData($table, $dataArr);
     }
   }
@@ -1164,7 +1161,7 @@ class DbHandler {
    */
   public function deleteData($table, $idData) {
     try{
-      self::$logger::log();
+      self::$logger->debug('');
 
       $this->checkIfInReadOnlyMode();
 
@@ -1199,8 +1196,8 @@ class DbHandler {
       }
 
       $sth = $this->dbh->prepare($query);
-      self::$logger::log($query, '$query');
-      self::$logger::log($bindBuilder->debugQuery($query), 'Query');
+      self::$logger->debug('$query: ' . $query);
+      self::$logger->debug('Query: ' . $bindBuilder->debugQuery($query));
 
       // Hacemos bind de los parámetros
       $bindBuilder->bindToStatement($sth);
@@ -1208,14 +1205,14 @@ class DbHandler {
       // EJECUTAMOS EL QUERY Y GENERAMOS RESPUESTA
       $sth->execute();
       $eliminados = $sth->rowCount();
-      self::$logger::log(">>> OK --({$eliminados} registros borrados)");
+      self::$logger->debug(">>> OK --({$eliminados} registros borrados)");
 
       // Devolvemos mensaje de confirmación
       return $eliminados;
     }
 
     catch (Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1231,7 +1228,7 @@ class DbHandler {
    */
   public function getSchemaInfo($table, $info = '*') {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       $columns = is_string($info)
         ? $info
@@ -1261,7 +1258,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1275,7 +1272,7 @@ class DbHandler {
    */
   public function getRowCount($table) {
     try {
-      self::$logger::log();
+      self::$logger->debug('');
 
       // Creamos la consulta y la ejecutamos
       $query = "SELECT COUNT(*) FROM $table";
@@ -1286,7 +1283,7 @@ class DbHandler {
     }
 
     catch(Exception $e) {
-      if (isset($query)) { self::$logger::log($query, '$query'); }
+      if (isset($query)) { self::$logger->debug('$query: ' . $query); }
       return $this->handleException($e, __FUNCTION__, func_get_args());
     }
   }
@@ -1300,17 +1297,17 @@ class DbHandler {
    * @throws Exception
    */
   public function getLastInsertId() {
-    self::$logger::log();
+    self::$logger->debug('');
 
     $lastInsertId = $this->dbh->lastInsertId();
-    self::$logger::log(">>> {$lastInsertId}");
+    self::$logger->debug(">>> {$lastInsertId}");
 
     return $lastInsertId;
   }
 
 
   public function checkIfInReadOnlyMode() {
-    self::$logger::log();
+    self::$logger->debug('');
 
     if (self::$isReadOnlyMode) {
       $msg = 'En este momento el sistema solo está habilitado para consultas.';
@@ -1339,7 +1336,7 @@ class DbHandler {
 
     // https://mariadb.com/kb/en/mariadb-error-codes/
     list($sqlState, $errorCode, $errorDesc) = $e->errorInfo;
-    self::$logger::log("{$errorCode}: {$errorDesc}", $sqlState);
+    self::$logger->debug("{$errorCode}: {$errorDesc}", $e->errorInfo);
 
     $errorMsg = $e->getMessage();
     $defaultErrMsg = 'No se pudo hacer la operación con la base de datos.';
@@ -1351,7 +1348,7 @@ class DbHandler {
           // Reintentamos la conexión
           $log = ">>> La conexión con la base de datos se ha perdido. "
                 . "Se intentará reconectar...";
-          self::$logger::log([], $log);
+          self::$logger->debug($log);
           $this->resetDBH();
           return $this->$method(...$arguments);
         }

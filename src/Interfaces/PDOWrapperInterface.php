@@ -3,8 +3,8 @@
 namespace Tribal2\DbHandler\Interfaces;
 
 use PDO;
+use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Interfaces\DbConfigInterface;
-use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 
 interface PDOWrapperInterface {
