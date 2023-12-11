@@ -1,87 +1,105 @@
 <?php
 
-namespace Tribal2\DbHandler;
+namespace Tribal2\DbHandler\Core;
 
 use Exception;
+use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
+use Tribal2\DbHandler\Helpers\LoggerNull;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 
 class DbTransaction {
 
+  // Dependencies
+  private static PDOWrapperInterface $pdoWrapper;
+  private static ?LoggerInterface $logger = NULL;
 
-  public static bool $throw = FALSE;
-  private static PDOCommitModeEnum $commitMode = PDOCommitModeEnum::ON;
 
-  final public static function setCommitsModeOn(): void {
-    self::$commitMode = PDOCommitModeEnum::ON;
+  // Class properties
+  private bool $throw = FALSE;
+  private PDOCommitModeEnum $commitMode = PDOCommitModeEnum::ON;
+
+
+  public function __construct(
+    PDOWrapperInterface $pdoWrapper,
+    ?LoggerInterface $logger = NULL,
+  ) {
+    $this->pdoWrapper = $pdoWrapper;
+
+    // Use default logger if none is provided
+    $this->logger = ($logger === NULL)
+      ? new LoggerNull()
+      : $logger;
   }
 
 
-  final public static function setCommitsModeOff(): void {
-    self::$commitMode = PDOCommitModeEnum::OFF;
+  final public function setCommitsModeOn(): void {
+    $this->commitMode = PDOCommitModeEnum::ON;
   }
 
 
-  final public static function getCommitsMode(): PDOCommitModeEnum {
-    return self::$commitMode;
+  final public function setCommitsModeOff(): void {
+    $this->commitMode = PDOCommitModeEnum::OFF;
   }
 
 
-  public static function begin(): bool {
-    $dbh = PDOSingleton::get();
+  final public function getCommitsMode(): PDOCommitModeEnum {
+    return $this->commitMode;
+  }
+
+
+  public function begin(): bool {
+    $dbh = $this->pdoWrapper->getPdo();
 
     if ($dbh->inTransaction()) {
-      return self::errorHandler('Ya existe una transacción activa.');
+      return $this->errorHandler('There is already an active transaction');
     }
 
     return $dbh->beginTransaction();
   }
 
 
-  public static function commit(): bool {
-    $dbh = PDOSingleton::get();
+  public function commit(): bool {
+    $dbh = $this->pdoWrapper->getPdo();
 
     if (!$dbh->inTransaction()) {
-      return self::errorHandler('No hay ninguna transacción activa.');
+      return $this->errorHandler('There is no active transaction.');
     }
 
-    if (self::getCommitsMode() === PDOCommitModeEnum::OFF) {
-      return self::errorHandler('Los commits están desabilitados.');
+    if ($this->getCommitsMode() === PDOCommitModeEnum::OFF) {
+      return $this->errorHandler('Commits are disabled');
     }
 
     return $dbh->commit();
   }
 
 
-  public static function rollback(): bool {
-    $dbh = PDOSingleton::get();
+  public function rollback(): bool {
+    $dbh = $this->pdoWrapper->getPdo();
 
     if (!$dbh->inTransaction()) {
-      return self::errorHandler('No hay ninguna transacción activa.');
+      return $this->errorHandler('There is no active transaction');
     }
 
     return $dbh->rollBack();
   }
 
 
-  public static function check() {
-    $dbh = PDOSingleton::get();
+  public function check() {
+    $dbh = $this->pdoWrapper->getPdo();
 
     return $dbh->inTransaction();
   }
 
 
-  private static function errorHandler($msg): bool {
-    try {
-      if (self::$throw) {
-        throw new Exception($msg);
-      }
+  private function errorHandler($msg): bool {
+    $this->logger->error($msg);
 
-      return FALSE;
+    if ($this->throw) {
+      throw new Exception($msg);
     }
 
-    catch (Exception $e) {
-      throw $e;
-    }
+    return FALSE;
   }
 
 
