@@ -3,7 +3,6 @@
 use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
-use Tribal2\DbHandler\PDOSingleton;
 
 describe('CommitsMode', function () {
 

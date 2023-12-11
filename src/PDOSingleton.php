@@ -4,8 +4,12 @@ namespace Tribal2\DbHandler;
 
 use Exception;
 use PDO;
-use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 
+/**
+ * Class PDOSingleton
+ *
+ * @deprecated
+ */
 class PDOSingleton {
   /**
    * Objeto PDO

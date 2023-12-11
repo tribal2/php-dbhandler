@@ -2,7 +2,6 @@
 
 namespace Tribal2\DbHandler\Abstracts;
 
-use Exception;
 use PDO;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;

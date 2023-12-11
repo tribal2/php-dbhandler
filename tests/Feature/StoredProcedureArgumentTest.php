@@ -1,7 +1,6 @@
 <?php
 
 use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
-use Tribal2\DbHandler\PDOSingleton;
 use Tribal2\DbHandler\Queries\Schema;
 
 require_once __DIR__ . '/../Feature/_DbTestSchema.php';
