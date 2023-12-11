@@ -37,6 +37,11 @@ class PDOWrapper implements PDOWrapperInterface {
   }
 
 
+  public function getPdo(): PDO {
+    return $this->_pdo;
+  }
+
+
   public function execute(
     string $query,
     PDOBindBuilderInterface $bindBuilder,

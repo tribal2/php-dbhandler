@@ -16,6 +16,9 @@ interface PDOWrapperInterface {
   );
 
 
+  public function getPdo(): PDO;
+
+
   public function execute(
     string $query,
     PDOBindBuilderInterface $bindBuilder,
