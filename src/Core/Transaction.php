@@ -7,8 +7,9 @@ use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\Interfaces\TransactionInterface;
 
-class Transaction {
+class Transaction implements TransactionInterface {
 
   // Dependencies
   private PDOWrapperInterface $pdoWrapper;
@@ -100,7 +101,7 @@ class Transaction {
   }
 
 
-  public function check() {
+  public function check(): bool {
     return $this->pdoWrapper->inTransaction();
   }
 
