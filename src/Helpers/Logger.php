@@ -2,10 +2,10 @@
 
 namespace Tribal2\DbHandler\Helpers;
 
+use Psr\Log\AbstractLogger;
 use Psr\Log\LoggerInterface;
-use Tribal2\DbHandler\Abstracts\LoggerAbstract;
 
-class Logger extends LoggerAbstract implements LoggerInterface {
+class Logger extends AbstractLogger implements LoggerInterface {
 
 
   public function log(

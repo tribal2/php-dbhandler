@@ -7,12 +7,12 @@ use PDO;
 use PDOException;
 use stdClass;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
-use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\TransactionInterface;
@@ -92,7 +92,7 @@ class DbHandler {
    */
   public function __construct(PDO $pdo = NULL) {
     if (DbHandler::$logger === NULL) {
-      DbHandler::$logger = new LoggerNull();
+      DbHandler::$logger = new NullLogger();
     }
 
     if (DbHandler::$cache === NULL) {

@@ -6,8 +6,8 @@ use Exception;
 use PDO;
 use PDOStatement;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Tribal2\DbHandler\DbConfig;
-use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\DbConfigInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -41,7 +41,7 @@ class PDOWrapper implements PDOWrapperInterface {
     ?DbConfigInterface $config = NULL,
     ?LoggerInterface $logger = NULL,
   ) {
-    $this->_logger = $logger ?? new LoggerNull();
+    $this->_logger = $logger ?? new NullLogger();
 
     if (!is_null($config)) {
       $this->_config = $config;

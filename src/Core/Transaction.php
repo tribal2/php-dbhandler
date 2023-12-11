@@ -4,8 +4,8 @@ namespace Tribal2\DbHandler\Core;
 
 use Exception;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
-use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\TransactionInterface;
 
@@ -28,7 +28,7 @@ class Transaction implements TransactionInterface {
     $this->pdoWrapper = $pdoWrapper;
 
     // Use default logger if none is provided
-    $this->logger = $logger ?? new LoggerNull();
+    $this->logger = $logger ?? new NullLogger();
   }
 
 
