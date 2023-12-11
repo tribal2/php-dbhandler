@@ -16,9 +16,6 @@ interface PDOWrapperInterface {
   );
 
 
-  public function getPdo(): PDO;
-
-
   public function execute(
     string $query,
     PDOBindBuilderInterface $bindBuilder,
@@ -27,6 +24,18 @@ interface PDOWrapperInterface {
 
 
   public function getDbName(): string;
+
+
+  public function beginTransaction(): bool;
+
+
+  public function commit(): bool;
+
+
+  public function rollBack(): bool;
+
+
+  public function inTransaction(): bool;
 
 
 }

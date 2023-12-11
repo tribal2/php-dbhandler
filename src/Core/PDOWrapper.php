@@ -77,6 +77,26 @@ class PDOWrapper implements PDOWrapperInterface {
   }
 
 
+  public function beginTransaction(): bool {
+    return $this->_pdo->beginTransaction();
+  }
+
+
+  public function commit(): bool {
+    return $this->_pdo->commit();
+  }
+
+
+  public function rollBack(): bool {
+    return $this->_pdo->rollBack();
+  }
+
+
+  public function inTransaction(): bool {
+    return $this->_pdo->inTransaction();
+  }
+
+
   private function setQueryType(string $query): void {
     // Trim query, remove new lines and spaces
     $noNewlines = str_replace("\n", ' ', $query);
