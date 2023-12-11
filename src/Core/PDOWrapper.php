@@ -6,15 +6,16 @@ use Exception;
 use PDO;
 use PDOStatement;
 use Psr\Log\LoggerInterface;
+use Tribal2\DbHandler\DbConfig;
+use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\DbConfigInterface;
-use Tribal2\DbHandler\Interfaces\LoggerInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 
 class PDOWrapper implements PDOWrapperInterface {
 
   // Dependencies
-  private DbConfigInterface $_config;
+  private ?DbConfigInterface $_config = NULL;
   private LoggerInterface $_logger;
 
   // Instance
@@ -22,23 +23,35 @@ class PDOWrapper implements PDOWrapperInterface {
   private string $_queryType;
 
 
-  public function __construct(
-    DbConfigInterface $config,
-    LoggerInterface $logger,
-  ) {
-    $this->_config = $config;
-    $this->_logger = $logger;
+  public static function fromPdo(
+    PDO $pdo,
+    ?LoggerInterface $logger = NULL,
+  ): PDOWrapperInterface {
+    $dbName = $pdo->query('SELECT DATABASE();')->fetchColumn();
 
-    $this->_pdo = new PDO(
-      $config->getConnString(),
-      $config->getUser(),
-      $config->getPassword()
-    );
+    $instance = new self(NULL, $logger);
+    $instance->_config = new DbConfig($dbName);
+    $instance->_pdo = $pdo;
+
+    return $instance;
   }
 
 
-  public function getPdo(): PDO {
-    return $this->_pdo;
+  public function __construct(
+    ?DbConfigInterface $config = NULL,
+    ?LoggerInterface $logger = NULL,
+  ) {
+    $this->_logger = $logger ?? new LoggerNull();
+
+    if (!is_null($config)) {
+      $this->_config = $config;
+
+      $this->_pdo = new PDO(
+        $config->getConnString(),
+        $config->getUser(),
+        $config->getPassword()
+      );
+    }
   }
 
 

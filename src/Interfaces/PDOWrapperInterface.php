@@ -10,9 +10,15 @@ use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 interface PDOWrapperInterface {
 
 
+  public static function fromPdo(
+    PDO $pdo,
+    ?LoggerInterface $logger = NULL,
+  ): PDOWrapperInterface;
+
+
   public function __construct(
-    DbConfigInterface $config,
-    LoggerInterface $logger,
+    ?DbConfigInterface $config = NULL,
+    ?LoggerInterface $logger = NULL,
   );
 
 
