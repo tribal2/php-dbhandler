@@ -1061,8 +1061,13 @@ class DbHandler {
             && array_key_exists($col, $data)
           )
         ) {
-          self::$common->checkValue($data[$col], $col);
-          $placeholder = $bindBuilder->addValueWithPrefix($data[$col], $col);
+          $theUpdateValue = $data[$col];
+          self::$common->checkValue($theUpdateValue, $col);
+          $placeholder = $bindBuilder->addValueWithPrefix(
+            $theUpdateValue,
+            $col,
+            is_null($theUpdateValue) ? PDO::PARAM_NULL : PDO::PARAM_STR,
+          );
           $updateQuerySet[] = "`{$col}` = {$placeholder}";
           continue;
         }
