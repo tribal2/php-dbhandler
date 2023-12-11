@@ -7,14 +7,15 @@ use PDO;
 use PDOException;
 use stdClass;
 use Psr\Log\LoggerInterface;
+use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
 use Tribal2\DbHandler\Helpers\LoggerNull;
-use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\Interfaces\TransactionInterface;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Schema;
 use Tribal2\DbHandler\Queries\Where;
@@ -41,7 +42,7 @@ class DbHandler {
   // Instance properties
   private PDO $dbh;
   private PDOWrapperInterface $pdoWrapper;
-  private Transaction $transaction;
+  private TransactionInterface $transaction;
 
 
   /**
@@ -222,8 +223,10 @@ class DbHandler {
     try {
       self::$logger->debug('');
 
-      $inCache = self::$cache->get(__METHOD__, func_get_args());
-      if (!empty($inCache)) { return $inCache; }
+      $cacheKey = __METHOD__ . $table;
+      if (self::$cache->has($cacheKey)) {
+        return self::$cache->get($cacheKey);
+      }
 
       $columnsInstance = Columns::_for($table, $this->pdoWrapper);
       $columns = (object)[
@@ -233,7 +236,7 @@ class DbHandler {
         'inc' => $columnsInstance->autoincrement,
       ];
 
-      self::$cache->set(__METHOD__, func_get_args(), $columns);
+      self::$cache->set($cacheKey, $columns);
 
       self::$logger->debug("{$table} >>>", [ $columns ]);
       return $columns;
