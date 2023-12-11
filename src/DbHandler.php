@@ -135,13 +135,19 @@ class DbHandler {
 
   final public function disableCommits() {
     self::$logger->debug('');
-    DbTransaction::setCommitsModeOff();
+    $this->transaction->setCommitsModeOff();
   }
 
 
   final public function enableCommits() {
     self::$logger->debug('');
+    $this->transaction->setCommitsModeOn();
+  }
+
+
+  final public function getTransactionCommitsMode(): PDOCommitModeEnum {
     self::$logger->debug('');
+    return $this->transaction->getCommitsMode();
   }
 
 
@@ -150,32 +156,32 @@ class DbHandler {
 
     switch($action) {
       case 'begin':
-        if ($this->dbh->inTransaction()) {
+        if ($this->transaction->check()) {
           self::$logger->debug('>>> Ya hay una transacción iniciada.');
           return NULL;
         }
-        return $this->dbh->beginTransaction();
+        return $this->transaction->begin();
 
       case 'commit':
-        if (!$this->dbh->inTransaction()) {
+        if (!$this->transaction->check()) {
           self::$logger->debug('>>> No hay ninguna transacción iniciada.');
           return NULL;
         }
-        if (DbTransaction::getCommitsMode() === PDOCommitModeEnum::OFF) {
+        if ($this->transaction->getCommitsMode() === PDOCommitModeEnum::OFF) {
           self::$logger->debug('>>> Los commits están desabilitados.');
           return NULL;
         }
-        return $this->dbh->commit();
+        return $this->transaction->commit();
 
       case 'rollback':
-        if (!$this->dbh->inTransaction()) {
+        if (!$this->transaction->check()) {
           self::$logger->debug('>>> No hay ninguna transacción iniciada.');
           return NULL;
         }
-        return $this->dbh->rollBack();
+        return $this->transaction->rollBack();
 
       case 'check':
-        return $this->dbh->inTransaction();
+        return $this->transaction->check();
 
       default:
         throw new Exception('Acción desconocida.');
@@ -194,8 +200,9 @@ class DbHandler {
   public function checkIfTableExists(string $table) {
     try {
       self::$logger->debug('');
+      $schema = new Schema($this->pdoWrapper);
 
-      return Schema::checkIfTableExists($table);
+      return $schema->checkIfTableExists($table);
     }
 
     catch (Exception $e) {
@@ -218,7 +225,7 @@ class DbHandler {
       $inCache = self::$cache->get(__METHOD__, func_get_args());
       if (!empty($inCache)) { return $inCache; }
 
-      $columnsInstance = Columns::for($table);
+      $columnsInstance = Columns::_for($table, $this->pdoWrapper);
       $columns = (object)[
         'all' => $columnsInstance->columns,
         'non' => $columnsInstance->nonKey,
