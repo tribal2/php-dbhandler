@@ -7,15 +7,16 @@ use PDO;
 use PDOException;
 use stdClass;
 use Psr\Log\LoggerInterface;
+use Tribal2\DbHandler\Core\PDOWrapper;
+use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Enums\PDOCommitModeEnum;
 use Tribal2\DbHandler\Helpers\Cache;
 use Tribal2\DbHandler\Helpers\LoggerNull;
 use Tribal2\DbHandler\Interfaces\CacheInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
-use Tribal2\DbHandler\Interfaces\LoggerInterface;
+use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Schema;
-use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
 use Tribal2\DbHandler\Table\Columns;
 
@@ -37,18 +38,10 @@ class DbHandler {
 
   private static bool $isReadOnlyMode = FALSE;
 
-  /**
-   * Objeto PDO
-   * @var PDO
-   */
-  protected $dbh;
-
-
-  /**
-   * Nombre de la base de datos
-   * @var string
-   */
-  private $dbName;
+  // Instance properties
+  private PDO $dbh;
+  private PDOWrapperInterface $pdoWrapper;
+  private Transaction $transaction;
 
 
   /**
@@ -92,11 +85,6 @@ class DbHandler {
   }
 
 
-  final public static function select(string $table): Select {
-    return Select::from($table);
-  }
-
-
   /**
    * CONSTRUCTOR
    * @param PDO $pdo (optional)
@@ -123,7 +111,11 @@ class DbHandler {
     self::$logger->debug('');
 
     // Si no se provee una instancia de PDO, usamos PDOSingleton
-    $this->dbh = $pdo ?? PDOSingleton::get();
+    $pdo = $pdo ?? PDOSingleton::get();
+
+    $this->dbh = $pdo;
+    $this->pdoWrapper = PDOWrapper::fromPdo($pdo, self::$logger);
+    $this->transaction = new Transaction($this->pdoWrapper, self::$logger);
   }
 
 
