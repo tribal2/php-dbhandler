@@ -3,26 +3,31 @@
 namespace Tribal2\DbHandler\Queries;
 
 use Exception;
-use PDO;
-use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
-use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Traits\ColumnsAwareTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
 
-class Update extends QueryModAbstract implements QueryInterface {
+class Update extends QueryAbstract {
+  use ColumnsAwareTrait;
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
   use QueryFetchCountTrait;
 
   private array $values = [];
   private ?WhereInterface $whereClause = NULL;
+
+
+  protected function afterConstruct(): void {
+    $this->setColumnsFactory();
+  }
 
 
   protected function beforeExecute(): void {
@@ -34,10 +39,15 @@ class Update extends QueryModAbstract implements QueryInterface {
   public static function _table(
     string $table,
     PDOWrapperInterface $pdo,
-    ColumnsFactoryInterface $columnsFactory,
+    ?ColumnsFactoryInterface $columnsFactory = NULL,
     ?CommonInterface $common = NULL,
   ): self {
-    $instance = new self($pdo, $common, $columnsFactory);
+    $instance = new self($pdo, $common);
+
+    if (!is_null($columnsFactory)) {
+      $instance->setColumnsFactory($columnsFactory);
+    }
+
     $instance->table($table);
 
     return $instance;

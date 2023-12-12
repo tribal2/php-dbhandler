@@ -10,11 +10,23 @@ use Tribal2\DbHandler\Queries\Update;
 
 describe('Update Builder', function () {
 
-  test('static factory', function () {
+  test('constructor', function () {
     $update = new Update(
       Mockery::mock(PDOWrapperInterface::class),
       Mockery::mock(CommonInterface::class),
-      Mockery::mock(ColumnsFactoryInterface::class),
+    );
+
+    expect($update)->toBeInstanceOf(Update::class);
+  });
+
+  test('static factory', function () {
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => FALSE ]);
+
+    $update = Update::_table(
+      'test_table',
+      Mockery::mock(PDOWrapperInterface::class),
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(CommonInterface::class),
     );
 
     expect($update)->toBeInstanceOf(Update::class);

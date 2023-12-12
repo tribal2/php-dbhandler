@@ -4,7 +4,7 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
-use Tribal2\DbHandler\Abstracts\QueryModAbstract;
+use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Factories\WhereFactory;
 use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
@@ -13,42 +13,49 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Traits\ColumnsAwareTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
+use Tribal2\DbHandler\Traits\WhereFactoryAwareTrait;
 
-class Insert extends QueryModAbstract implements QueryInterface {
+class Insert extends QueryAbstract implements QueryInterface {
+  use ColumnsAwareTrait;
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
   use QueryFetchCountTrait;
+  use WhereFactoryAwareTrait;
 
   // Properties
   private array $values = [ [] ];
-  private WhereFactoryInterface $_whereFactory;
 
 
   public static function _into(
     string $table,
     PDOWrapperInterface $pdo,
-    ColumnsFactoryInterface $columnsFactory,
+    ?ColumnsFactoryInterface $columnsFactory = NULL,
     ?WhereFactoryInterface $whereFactory = NULL,
     ?CommonInterface $common = NULL,
   ): self {
-    $insert = new self($pdo, $columnsFactory, $whereFactory, $common);
+    $insert = new self($pdo, $common);
+
+    if (!is_null($columnsFactory)) {
+      $insert->setColumnsFactory($columnsFactory);
+    }
+
+    if (!is_null($whereFactory)) {
+      $insert->setWhereFactory($whereFactory);
+    }
+
     $insert->into($table);
 
     return $insert;
   }
 
 
-  public function __construct(
-    PDOWrapperInterface $pdo,
-    ColumnsFactoryInterface $columnsFactory = NULL,
-    ?WhereFactoryInterface $whereFactory = NULL,
-    ?CommonInterface $common = NULL,
-  ) {
-    parent::__construct($pdo, $common, $columnsFactory);
-    $this->_whereFactory = $whereFactory ?? new WhereFactory();
+  protected function afterConstruct(): void {
+    $this->setColumnsFactory();
+    $this->setWhereFactory();
   }
 
 

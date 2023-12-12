@@ -14,8 +14,6 @@ describe('Builder', function () {
   test('constructor', function () {
     $insert = new Insert(
       Mockery::mock(PDOWrapperInterface::class),
-      Mockery::mock(ColumnsFactoryInterface::class),
-      Mockery::mock(WhereFactoryInterface::class),
       Mockery::mock(CommonInterface::class),
     );
 
