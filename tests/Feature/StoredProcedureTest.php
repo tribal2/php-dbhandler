@@ -20,6 +20,11 @@ describe('Exceptions', function () {
     $this->myPdo = DbTestSchema::getPdoWrapper();
   });
 
+  it('should throw when read only mode is enabled', function () {
+    $this->myPdo->setReadOnlyMode(TRUE);
+    StoredProcedure::call('invalid_procedure_name', $this->myPdo);
+  })->throws(Exception::class);
+
   it('should throw with invalid procedure name', function () {
     StoredProcedure::call('invalid_procedure_name', $this->myPdo);
   })->throws(Exception::class);

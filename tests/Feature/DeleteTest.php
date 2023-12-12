@@ -13,6 +13,22 @@ afterAll(function () {
   DbTestSchema::down();
 });
 
+
+describe('Read only mode', function () {
+
+  test('insert records should throw', function () {
+    $myPdo = DbTestSchema::getReadOnlyPdoWrapper();
+    Delete::_from('test_table', $myPdo)
+      ->execute();
+  })->throws(
+    Exception::class,
+    "Can't execute statement. Read only mode is enabled.",
+    409,
+  );
+
+});
+
+
 describe('Delete', function () {
 
   beforeEach(function () {

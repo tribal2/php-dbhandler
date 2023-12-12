@@ -15,6 +15,23 @@ afterAll(function () {
   DbTestSchema::down();
 });
 
+
+describe('Read only mode', function () {
+
+  test('insert records should throw', function () {
+    $myPdo = DbTestSchema::getReadOnlyPdoWrapper();
+    Update::_table('test_table', $myPdo, new ColumnsFactory($myPdo))
+      ->set('value', 'updated value')
+      ->execute();
+  })->throws(
+    Exception::class,
+    "Can't execute statement. Read only mode is enabled.",
+    409,
+  );
+
+});
+
+
 describe('Update', function () {
 
   beforeEach(function () {
