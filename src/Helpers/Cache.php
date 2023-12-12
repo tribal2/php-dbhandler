@@ -21,11 +21,6 @@ class Cache implements CacheInterface {
     }
 
     $cacheItem = $this->cache[$key];
-    $nowUnix = (new DateTime())->getTimestamp();
-    if ($cacheItem->expiresAt < $nowUnix) {
-      unset($this->cache[$key]);
-      return $default;
-    }
 
     return unserialize($cacheItem->value);
   }
@@ -82,7 +77,19 @@ class Cache implements CacheInterface {
 
 
   public function has(string $key): bool {
-    return isset($this->cache[$key]);
+    if (!isset($this->cache[$key])) {
+      return FALSE;
+    }
+
+    $cacheItem = $this->cache[$key];
+
+    $nowUnix = (new DateTime())->getTimestamp();
+    if ($cacheItem->expiresAt < $nowUnix) {
+      unset($this->cache[$key]);
+      return FALSE;
+    }
+
+    return TRUE;
   }
 
 
