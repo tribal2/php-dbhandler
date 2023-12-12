@@ -6,15 +6,14 @@ use PDOStatement;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
+use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Common;
 
-abstract class QueryAbstract {
+abstract class QueryAbstract implements QueryInterface {
 
 
-  abstract public function getSql(
-    ?PDOBindBuilderInterface $bindBuilder = NULL,
-  ): string;
+  abstract public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string;
 
 
   abstract protected function beforeExecute(): void;
@@ -34,7 +33,12 @@ abstract class QueryAbstract {
   ) {
     $this->_pdo = $pdo;
     $this->_common = $common ?? new Common();
+
+    $this->afterConstruct();
   }
+
+
+  protected function afterConstruct(): void {}
 
 
   public function execute(
