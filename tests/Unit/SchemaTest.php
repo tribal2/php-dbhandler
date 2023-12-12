@@ -26,7 +26,10 @@ describe('Methods', function () {
   });
 
   test("checkIfTableExists('known_table') - should return TRUE", function () {
-    $this->myPdo->shouldReceive('execute')->once()->andReturn([ 1 ]);
+    $pdoStatementMock = Mockery::mock(PDOStatement::class, [
+      'fetchAll' => [ 1 ],
+    ]);
+    $this->myPdo->shouldReceive('execute')->once()->andReturn($pdoStatementMock);
     $schema = new Schema($this->myPdo);
 
     expect($schema->checkIfTableExists('users'))
@@ -35,7 +38,10 @@ describe('Methods', function () {
   });
 
   test("checkIfTableExists('unknown_table') should return FALSE", function () {
-    $this->myPdo->shouldReceive('execute')->once()->andReturn([]);
+    $pdoStatementMock = Mockery::mock(PDOStatement::class, [
+      'fetchAll' => [],
+    ]);
+    $this->myPdo->shouldReceive('execute')->once()->andReturn($pdoStatementMock);
     $schema = new Schema($this->myPdo);
 
     expect($schema->checkIfTableExists('unknown_table'))

@@ -25,7 +25,9 @@ describe('Instance', function () use ($executeFakeResult) {
   beforeEach(function () use ($executeFakeResult) {
     $this->mockPDOWrapper = Mockery::mock(PDOWrapperInterface::class, [
       'getDbName' => 'test_db',
-      'execute' => $executeFakeResult,
+      'execute' => Mockery::mock(PDOStatement::class, [
+        'fetchAll' => $executeFakeResult,
+      ]),
     ]);
   });
 

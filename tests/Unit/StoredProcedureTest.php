@@ -175,13 +175,18 @@ describe('Execute', function () {
       ->shouldReceive('addValueWithPrefix')->andReturn('<BINDED_VALUE>')->getMock()
       ->shouldReceive('bindToStatement');
 
-    $mockPdoWrapper = Mockery::mock(PDOWrapperInterface::class, [
-      'execute' => [
+    $mockPdoStatement = Mockery::mock(PDOStatement::class, [
+      'fetchAll' => [
         (object)[
           'id' => 1,
           'name' => 'test',
         ],
       ],
+    ]);
+
+    $mockPdoWrapper = Mockery::mock(PDOWrapperInterface::class, [
+      'isReadOnly' => FALSE,
+      'execute' => $mockPdoStatement,
     ]);
 
     $sp = new StoredProcedure(
