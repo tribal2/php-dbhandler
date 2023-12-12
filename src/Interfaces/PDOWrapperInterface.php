@@ -3,6 +3,7 @@
 namespace Tribal2\DbHandler\Interfaces;
 
 use PDO;
+use PDOStatement;
 use Psr\Log\LoggerInterface;
 use Tribal2\DbHandler\Interfaces\DbConfigInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -25,6 +26,7 @@ interface PDOWrapperInterface {
   public function execute(
     string $query,
     PDOBindBuilderInterface $bindBuilder,
+  ): PDOStatement;
 
 
   public function getLastInsertId(): string|false;
