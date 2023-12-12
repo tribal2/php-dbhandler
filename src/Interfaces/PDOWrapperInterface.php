@@ -25,8 +25,9 @@ interface PDOWrapperInterface {
   public function execute(
     string $query,
     PDOBindBuilderInterface $bindBuilder,
-    ?int $fetchMode = PDO::FETCH_OBJ,
-  ): array|int;
+
+
+  public function getLastInsertId(): string|false;
 
 
   public function getDbName(): string;
@@ -42,6 +43,12 @@ interface PDOWrapperInterface {
 
 
   public function inTransaction(): bool;
+
+
+  public function setReadOnlyMode(bool $readOnly): void;
+
+
+  public function isReadOnly(): bool;
 
 
 }

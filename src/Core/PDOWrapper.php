@@ -90,6 +90,25 @@ class PDOWrapper implements PDOWrapperInterface {
   }
 
 
+  public function getLastInsertId(): string|false {
+    return $this->_pdo->lastInsertId();
+  }
+
+
+  public function setReadOnlyMode(bool $readOnly): void {
+    if ($readOnly) {
+      $this->_config->withReadOnlyMode();
+    } else {
+      $this->_config->withReadOnlyModeOff();
+    }
+  }
+
+
+  public function isReadOnly(): bool {
+    return $this->_config->isReadOnly();
+  }
+
+
   public function beginTransaction(): bool {
     return $this->_pdo->beginTransaction();
   }
