@@ -9,7 +9,7 @@ trait QueryBeforeExecuteCheckTableTrait {
   public string $table;
 
 
-  protected function beforeExecute(): void {
+  protected function checkTable(): void {
     if (!isset($this->table)) {
       throw new Exception('Table name is not set');
     }
