@@ -22,9 +22,9 @@ interface CacheAwareInterface {
 
 
   public function withCache(
-    mixed $default,
+    mixed $default = NULL,
     null|int|DateInterval $ttl = NULL,
-  ): self;
+  ): static;
 
 
 }

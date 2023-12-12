@@ -4,7 +4,6 @@ namespace Tribal2\DbHandler\Traits;
 
 use DateInterval;
 use Exception;
-use PDO;
 use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
@@ -54,12 +53,12 @@ trait CacheAwareTrait {
    * @param mixed                 $default The default value to return if the cache is not set.
    * @param null|int|DateInterval $ttl     The cache ttl.
    *
-   * @return self
+   * @return static
    */
   public function withCache(
-    mixed $default,
+    mixed $default = NULL,
     null|int|DateInterval $ttl = NULL,
-  ): self {
+  ): static {
     if ($this->cache === NULL) {
       throw new Exception('Cache is not set. Call setCache() first.');
     }
@@ -72,35 +71,36 @@ trait CacheAwareTrait {
   }
 
 
-  protected function _execute(
+  public function execute(
     ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?int $fetchMode = PDO::FETCH_OBJ,
   ): array|int {
-    // Before execute hook
-    $this->beforeExecute();
-
-    // Generate query
-    $bindBuilder = $bindBuilder ?? new PDOBindBuilder();
-    $query = $this->getSql($bindBuilder);
-
     // Check cache
     if ($this->useCache) {
-      $cacheKey = md5($bindBuilder->debugQuery($query));
+      $cacheKey = $this->generateCacheKey();
 
       if ($this->cache->has($cacheKey)) {
         return $this->cache->get($cacheKey);
       }
     }
 
-    // Execute query
-    $queryResult = $this->_pdo->execute($query, $bindBuilder, $fetchMode);
+    $queryResult = parent::execute($bindBuilder);
 
-    // Set cache
+    // Cache results
     if ($this->useCache) {
       $this->cache->set($cacheKey, $queryResult, $this->cacheTtl);
     }
 
     return $queryResult;
+  }
+
+
+  private function generateCacheKey(): string {
+    // Generate query
+    $bindBuilder = new PDOBindBuilder();
+    $query = $this->getSql($bindBuilder);
+
+    // Check cache
+    return md5($bindBuilder->debugQuery($query));
   }
 
 
