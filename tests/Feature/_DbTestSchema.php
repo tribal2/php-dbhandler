@@ -1,8 +1,10 @@
 <?php
 
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Tribal2\DbHandler\Core\PDOWrapper;
 use Tribal2\DbHandler\DbConfig;
+use Tribal2\DbHandler\Helpers\Logger;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOSingleton;
 
@@ -23,6 +25,13 @@ class DbTestSchema {
   }
 
 
+  public static function getLogger(): LoggerInterface {
+    $logger = new NullLogger();
+
+    return $logger;
+  }
+
+
   public static function usePdoSingleton(): void {
     $cfg = self::getConfig();
     PDOSingleton::configure($cfg);
@@ -31,7 +40,17 @@ class DbTestSchema {
 
   public static function getPdoWrapper(): PDOWrapperInterface {
     $cfg = self::getConfig();
-    $logger = new NullLogger();
+    $logger = self::getLogger();
+
+    $myPdo = new PDOWrapper($cfg, $logger);
+
+    return $myPdo;
+  }
+
+
+  public static function getReadOnlyPdoWrapper(): PDOWrapperInterface {
+    $cfg = self::getConfig()->withReadOnlyMode();
+    $logger = self::getLogger();
 
     $myPdo = new PDOWrapper($cfg, $logger);
 
