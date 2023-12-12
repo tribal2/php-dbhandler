@@ -2,7 +2,7 @@
 
 namespace Tribal2\DbHandler\Abstracts;
 
-use PDO;
+use PDOStatement;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -20,6 +20,9 @@ abstract class QueryAbstract {
   abstract protected function beforeExecute(): void;
 
 
+  abstract protected function fetchResults(PDOStatement $statement): int|array;
+
+
   // Dependencies
   protected PDOWrapperInterface $_pdo;
   protected CommonInterface $_common;
@@ -34,9 +37,8 @@ abstract class QueryAbstract {
   }
 
 
-  protected function _execute(
+  public function execute(
     ?PDOBindBuilderInterface $bindBuilder = NULL,
-    ?int $fetchMode = PDO::FETCH_OBJ,
   ): array|int {
     // Before execute hook
     $this->beforeExecute();
@@ -46,7 +48,12 @@ abstract class QueryAbstract {
     $query = $this->getSql($bindBuilder);
 
     // Execute query
-    return $this->_pdo->execute($query, $bindBuilder, $fetchMode);
+    $stmt = $this->_pdo->execute($query, $bindBuilder);
+
+    // Fetch results
+    $results = $this->fetchResults($stmt);
+
+    return $results;
   }
 
 
