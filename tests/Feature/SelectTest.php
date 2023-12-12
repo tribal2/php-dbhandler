@@ -1,6 +1,8 @@
 <?php
 
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
+use Tribal2\DbHandler\Helpers\Cache;
+use Tribal2\DbHandler\Queries\Insert;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
 
@@ -204,4 +206,55 @@ describe('functions', function () {
     expect($res)->toBe(2);
   });
 
+});
+
+
+describe('Caching', function () {
+
+  beforeEach(function () {
+    $this->myPdo = DbTestSchema::getPdoWrapper();
+  });
+
+  test('it should throw when cache is not set', function () {
+    Select::_from('test_table', $this->myPdo)->withCache();
+  })->throws(Exception::class);
+
+  test('set cache when is not set', function () {
+    $select = Select::_from('test_table', $this->myPdo);
+
+    $cache = new Cache();
+    $select->setCache($cache);
+
+    // Select and cache results
+    $results = $select
+      ->withCache()
+      ->fetchAll();
+
+    expect($results)
+      ->toBeArray()
+      ->toHaveLength(2);
+
+    // Add new row
+    Insert::_into('test_table', $this->myPdo)
+      ->value('key', 'cache_test')
+      ->value('value', 'Test value 3')
+      ->execute();
+
+    // Select again without cache to verify new row
+    $resultsAfterInsert = Select::_from('test_table', $this->myPdo)
+      ->fetchAll();
+
+    expect($resultsAfterInsert)
+      ->toBeArray()
+      ->toHaveLength(3);
+
+    // Select again with cache to verify new row is not returned
+    $cachedResults = $select
+      ->withCache()
+      ->fetchAll();
+
+    expect($cachedResults)
+      ->toBeArray()
+      ->toHaveLength(2);
+  });
 });

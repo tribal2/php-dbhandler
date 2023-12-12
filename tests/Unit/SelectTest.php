@@ -1,5 +1,6 @@
 <?php
 
+use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
@@ -108,5 +109,90 @@ describe('SQL', function () {
       'LIMIT <BINDED_VALUE>;',
     ];
     expect($sql)->toBe(implode(' ', $expected));
+  });
+});
+
+
+describe('Caching', function () {
+
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+      'parseColumns' => '<COLUMNS>',
+    ]);
+
+    $this->queryResult = [
+      (object)['column1' => 'value1'],
+      (object)['column1' => 'value2'],
+    ];
+
+    $mockPDOStatement = Mockery::mock(PDOStatement::class, [
+      'fetchAll' => $this->queryResult,
+    ]);
+
+    $mockPDOWrapper = Mockery::mock(PDOWrapperInterface::class, [
+      'execute' => $mockPDOStatement,
+    ]);
+
+    $this->select = Select::_from(
+      'my_table',
+      $mockPDOWrapper,
+      $mockCommon,
+    );
+
+    // Set cache
+    $this->mockCache = Mockery::mock(CacheInterface::class);
+  });
+
+  test('it should throw when cache is not set', function () {
+    $this->select->withCache();
+  })->throws(Exception::class);
+
+  test('use cache when set', function () {
+    $this->select->setCache($this->mockCache);
+    $this->mockCache->shouldReceive('has')->once()->andReturn(TRUE);
+    $this->mockCache->shouldReceive('get')->once()->andReturn([]);
+
+    $results = $this->select
+      ->withCache()
+      ->fetchAll();
+
+    expect($results)
+      ->toBeArray()
+      ->toHaveLength(0);
+  });
+
+  test('set cache when is not set', function () {
+    $this->select->setCache($this->mockCache);
+
+    /**
+     * Cache is not set
+     */
+    $this->mockCache->shouldReceive('has')->once()->andReturn(FALSE);
+    // Cache is set
+    $this->mockCache->shouldReceive('set')->once()->andReturn(TRUE);
+
+    $results = $this->select
+      ->withCache()
+      ->fetchAll();
+
+    expect($results)
+      ->toBeArray()
+      ->toHaveLength(2);
+
+    /**
+     * Cache is set
+     */
+    $this->mockCache->shouldReceive('has')->once()->andReturn(TRUE);
+    $this->mockCache->shouldReceive('get')->once()->andReturn($this->queryResult);
+
+    $results2 = $this->select
+      ->withCache()
+      ->fetchAll();
+
+    expect($results2)
+      ->toBeArray()
+      ->toHaveLength(2);
   });
 });
