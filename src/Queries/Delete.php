@@ -8,14 +8,13 @@ use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
-use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
 
-class Delete extends QueryAbstract implements QueryInterface {
+class Delete extends QueryAbstract {
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
   use QueryFetchCountTrait;

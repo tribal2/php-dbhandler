@@ -11,7 +11,6 @@ use Tribal2\DbHandler\Interfaces\CacheAwareInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
-use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Common;
@@ -20,7 +19,7 @@ use Tribal2\DbHandler\Traits\CacheAwareTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
-class Select extends QueryAbstract implements QueryInterface, CacheAwareInterface {
+class Select extends QueryAbstract implements CacheAwareInterface {
   use QueryBeforeExecuteCheckTableTrait;
   use QueryFetchResultsTrait;
   use CacheAwareTrait;

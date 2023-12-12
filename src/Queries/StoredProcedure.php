@@ -9,13 +9,12 @@ use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
-use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
-class StoredProcedure extends QueryAbstract implements QueryInterface {
+class StoredProcedure extends QueryAbstract {
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryFetchResultsTrait;
 

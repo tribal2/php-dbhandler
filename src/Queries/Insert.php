@@ -10,7 +10,6 @@ use Tribal2\DbHandler\Interfaces\ColumnsFactoryInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
-use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\ColumnsAwareTrait;
@@ -19,7 +18,7 @@ use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
 use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
 use Tribal2\DbHandler\Traits\WhereFactoryAwareTrait;
 
-class Insert extends QueryAbstract implements QueryInterface {
+class Insert extends QueryAbstract {
   use ColumnsAwareTrait;
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
