@@ -7,6 +7,7 @@ use PDO;
 use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
+use Tribal2\DbHandler\Interfaces\CacheAwareInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -15,10 +16,14 @@ use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Common;
 use Tribal2\DbHandler\Queries\Where;
+use Tribal2\DbHandler\Traits\CacheAwareTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
+use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
-class Select extends QueryAbstract implements QueryInterface {
+class Select extends QueryAbstract implements QueryInterface, CacheAwareInterface {
   use QueryBeforeExecuteCheckTableTrait;
+  use QueryFetchResultsTrait;
+  use CacheAwareTrait;
 
   /**
    * Columns to select
@@ -34,6 +39,11 @@ class Select extends QueryAbstract implements QueryInterface {
   private ?int $offset = NULL;
 
   private int $fetchMethod = PDO::FETCH_OBJ;
+
+
+  protected function beforeExecute(): void {
+    $this->checkTable();
+  }
 
 
   public static function _from(
@@ -120,12 +130,6 @@ class Select extends QueryAbstract implements QueryInterface {
   public function fetchMethod(int $method): self {
     $this->fetchMethod = $method;
     return $this;
-  }
-
-
-  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): array {
-    // Return an array with values depending on the fetch method
-    return parent::_execute($bindBuilder, $this->fetchMethod);
   }
 
 

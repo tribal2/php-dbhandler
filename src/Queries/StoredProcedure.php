@@ -12,10 +12,12 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
+use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
 class StoredProcedure extends QueryAbstract implements QueryInterface {
-  use QueryBeforeExecuteDoNothingTrait;
+  use QueryBeforeExecuteCheckIfReadOnlyTrait;
+  use QueryFetchResultsTrait;
 
   // Properties
   public string $name;
@@ -24,6 +26,11 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
    * @var StoredProcedureArgumentInterface[]
    */
   private array $params;
+
+
+  protected function beforeExecute(): void {
+    $this->checkIfReadOnly();
+  }
 
 
   public static function call(
@@ -107,11 +114,6 @@ class StoredProcedure extends QueryAbstract implements QueryInterface {
     $procParams = implode(', ', $params);
 
     return "CALL {$this->name}({$procParams});";
-  }
-
-
-  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): array {
-    return parent::_execute($bindBuilder);
   }
 
 

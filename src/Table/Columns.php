@@ -8,14 +8,21 @@ use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
+use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
 class Columns extends QueryAbstract implements ColumnsInterface {
   use QueryBeforeExecuteCheckTableTrait;
+  use QueryFetchResultsTrait;
 
   public array $columns = [];
   public array $key = [];
   public array $nonKey = [];
   public array $autoincrement = [];
+
+
+  protected function beforeExecute(): void {
+    $this->checkTable();
+  }
 
 
   public static function _for(
@@ -31,7 +38,7 @@ class Columns extends QueryAbstract implements ColumnsInterface {
   public function for(string $table): self {
     $this->table = $table;
 
-    $dbColumns = parent::_execute();
+    $dbColumns = $this->execute();
     $this->parse($dbColumns);
 
     return $this;

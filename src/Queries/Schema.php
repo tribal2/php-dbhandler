@@ -10,9 +10,11 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
+use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
 class Schema extends QueryAbstract implements SchemaInterface {
   use QueryBeforeExecuteDoNothingTrait;
+  use QueryFetchResultsTrait;
 
   private string $database;
   private string $_query;
@@ -52,7 +54,7 @@ class Schema extends QueryAbstract implements SchemaInterface {
     );
     $this->_query = "SHOW TABLES LIKE {$tablePlaceholder};";
 
-    $resultArr = parent::_execute($bindBuilder);
+    $resultArr = $this->execute($bindBuilder);
 
     return count($resultArr) > 0;
   }
@@ -76,7 +78,7 @@ class Schema extends QueryAbstract implements SchemaInterface {
           AND SPECIFIC_NAME = {$namePlaceholder};
     ";
 
-    return parent::_execute($bindBuilder);
+    return $this->execute($bindBuilder);
   }
 
 

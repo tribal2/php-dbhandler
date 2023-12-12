@@ -12,13 +12,23 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
+use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
 
 class Update extends QueryModAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
+  use QueryFetchCountTrait;
 
   private array $values = [];
   private ?WhereInterface $whereClause = NULL;
+
+
+  protected function beforeExecute(): void {
+    $this->checkTable();
+    $this->checkIfReadOnly();
+  }
 
 
   public static function _table(
@@ -96,12 +106,6 @@ class Update extends QueryModAbstract implements QueryInterface {
     ];
 
     return implode(' ', array_filter($queryArr)) . ';';
-  }
-
-
-  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): int {
-    // Return the number of affected rows
-    return parent::_execute($bindBuilder);
   }
 
 

@@ -13,10 +13,14 @@ use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\QueryInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
+use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckTableTrait;
+use Tribal2\DbHandler\Traits\QueryFetchCountTrait;
 
 class Insert extends QueryModAbstract implements QueryInterface {
+  use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryBeforeExecuteCheckTableTrait;
+  use QueryFetchCountTrait;
 
   // Properties
   private array $values = [ [] ];
@@ -45,6 +49,13 @@ class Insert extends QueryModAbstract implements QueryInterface {
   ) {
     parent::__construct($pdo, $common, $columnsFactory);
     $this->_whereFactory = $whereFactory ?? new WhereFactory();
+  }
+
+
+  protected function beforeExecute(): void {
+    $this->checkTable();
+    $this->checkIfReadOnly();
+    $this->checkForCollisions();
   }
 
 
@@ -147,15 +158,6 @@ class Insert extends QueryModAbstract implements QueryInterface {
     $query = "INSERT INTO {$quotedTable} ({$qColumns}) VALUES {$qRows};";
 
     return $query;
-  }
-
-
-  public function execute(?PDOBindBuilderInterface $bindBuilder = NULL): int {
-    // Check if there are collisions
-    $this->checkForCollisions();
-
-    // Return the number of affected rows
-    return parent::_execute($bindBuilder);
   }
 
 
