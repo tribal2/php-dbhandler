@@ -9,11 +9,9 @@ use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
-use Tribal2\DbHandler\Traits\QueryBeforeExecuteDoNothingTrait;
 use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 
 class Schema extends QueryAbstract implements SchemaInterface {
-  use QueryBeforeExecuteDoNothingTrait;
   use QueryFetchResultsTrait;
 
   private string $database;

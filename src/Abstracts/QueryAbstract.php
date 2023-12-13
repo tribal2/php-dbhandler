@@ -16,9 +16,6 @@ abstract class QueryAbstract implements QueryInterface {
   abstract public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string;
 
 
-  abstract protected function beforeExecute(): void;
-
-
   abstract protected function fetchResults(PDOStatement $statement): int|array;
 
 
@@ -39,6 +36,9 @@ abstract class QueryAbstract implements QueryInterface {
 
 
   protected function afterConstruct(): void {}
+
+
+  protected function beforeExecute(): void {}
 
 
   public function execute(
