@@ -51,7 +51,7 @@ class DbConfig implements DbConfigInterface {
   }
 
 
-  public function withEncoding(string $encoding): self {
+  public function withCharset(string $encoding): self {
     $this->encoding = $encoding;
     return $this;
   }

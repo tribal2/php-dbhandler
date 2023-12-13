@@ -31,7 +31,7 @@ interface DbConfigInterface {
   public function withPort(int|string $port): self;
 
 
-  public function withEncoding(string $encoding): self;
+  public function withCharset(string $encoding): self;
 
 
   public function withReadOnlyMode(): self;
