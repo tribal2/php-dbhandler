@@ -1,7 +1,32 @@
 {
     "name": "tribal2/db-handler",
+    "version": "0.0.1",
     "description": "Library to interact with MySQL databases",
     "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "database",
+        "mysql",
+        "pdo",
+        "query",
+        "builder"
+    ],
+    "authors": [
+        {
+            "name": "Ricardo Tribaldos",
+            "email": "rtribaldos@barustudio.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/tribal2/php-dbhandler/issues",
+        "source": "https://github.com/tribal2/php-dbhandler"
+    },
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {
+            "Tribal2\\DbHandler\\": "src/"
+        }
+    },
     "require": {
         "panique/pdo-debug": "^0.2.0",
         "psr/log": "^3.0",
@@ -11,22 +36,6 @@
         "pestphp/pest": "^2.24",
         "mockery/mockery": "^1.6"
     },
-    "license": "private",
-    "autoload": {
-        "psr-4": {
-            "Tribal2\\DbHandler\\": "src/",
-            "Tribal2\\DbHandler\\Enums\\": "src/Enums",
-            "Tribal2\\DbHandler\\Helpers\\": "src/Helpers",
-            "Tribal2\\DbHandler\\Interfaces\\": "src/Interfaces",
-            "Tribal2\\DbHandler\\Queries\\": "src/Queries"
-        }
-    },
-    "authors": [
-        {
-            "name": "Ricardo Tribaldos"
-        }
-    ],
-    "minimum-stability": "stable",
     "config": {
         "allow-plugins": {
             "pestphp/pest-plugin": true
