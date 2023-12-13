@@ -3,10 +3,13 @@
 namespace Tribal2\DbHandler;
 
 use Psr\SimpleCache\CacheInterface;
+use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Queries\Delete;
 use Tribal2\DbHandler\Queries\Insert;
+use Tribal2\DbHandler\Queries\Schema;
 use Tribal2\DbHandler\Queries\Select;
+use Tribal2\DbHandler\Queries\StoredProcedure;
 use Tribal2\DbHandler\Queries\Update;
 
 class Db {
@@ -16,6 +19,16 @@ class Db {
     private PDOWrapperInterface $pdo,
     private ?CacheInterface $cache = NULL,
   ) {}
+
+
+  public function transaction(): Transaction {
+    return new Transaction($this->pdo);
+  }
+
+
+  public function schema(): Schema {
+    return new Schema($this->pdo);
+  }
 
 
   public function select(): Select {
@@ -41,6 +54,11 @@ class Db {
 
   public function delete(): Delete {
     return new Delete($this->pdo);
+  }
+
+
+  public function storedProcedure(): StoredProcedure {
+    return new StoredProcedure($this->pdo);
   }
 
 
