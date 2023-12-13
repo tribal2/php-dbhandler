@@ -17,25 +17,33 @@ afterAll(function () {
 describe('Exceptions', function () {
 
   beforeEach(function () {
-    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->storedProcedure = new StoredProcedure(DbTestSchema::getPdoWrapper());
   });
 
   it('should throw when read only mode is enabled', function () {
-    $this->myPdo->setReadOnlyMode(TRUE);
-    StoredProcedure::call('invalid_procedure_name', $this->myPdo);
-  })->throws(Exception::class);
+    StoredProcedure::_call(
+      'get_test_rows',
+      DbTestSchema::getReadOnlyPdoWrapper(),
+    )->execute();
+  })->throws(
+    Exception::class,
+    "Can't execute statement. Read only mode is enabled.",
+    409,
+  );
 
   it('should throw with invalid procedure name', function () {
-    StoredProcedure::call('invalid_procedure_name', $this->myPdo);
+    $this->storedProcedure->call('invalid_procedure_name');
   })->throws(Exception::class);
 
   it('should throw with invalid argument name', function () {
-    StoredProcedure::call('get_test_rows', $this->myPdo)
+    $this->storedProcedure
+      ->call('get_test_rows')
       ->with('invalid', '123');
   })->throws(Exception::class);
 
   it('should throw with invalid argument type', function () {
-    StoredProcedure::call('get_test_rows', $this->myPdo)
+    $this->storedProcedure
+      ->call('get_test_rows')
       ->with('keyInput', 123);
   })->throws(Exception::class);
 
@@ -45,11 +53,11 @@ describe('Exceptions', function () {
 describe('getArguments()', function () {
 
   beforeEach(function () {
-    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->storedProcedure = new StoredProcedure(DbTestSchema::getPdoWrapper());
   });
 
   it('should return an array of provided (and validated arguments)', function () {
-    $sp = StoredProcedure::call('get_test_rows', $this->myPdo);
+    $sp = $this->storedProcedure->call('get_test_rows');
 
     $args1 = $sp->with('keyInput', '123')->getArguments();
 
@@ -81,13 +89,14 @@ describe('getArguments()', function () {
 describe('SQL', function () {
 
   beforeEach(function () {
-    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->storedProcedure = new StoredProcedure(DbTestSchema::getPdoWrapper());
   });
 
   it('should generate valid SQL statements', function () {
     $bindBuilder = new PDOBindBuilder();
 
-    $sql = StoredProcedure::call('get_test_rows', $this->myPdo)
+    $sql = $this->storedProcedure
+      ->call('get_test_rows')
       ->with('keyInput', '123')
       ->with('valueInput', '%')
       ->getSql($bindBuilder);
@@ -109,11 +118,12 @@ describe('SQL', function () {
 describe('Results', function () {
 
   beforeEach(function () {
-    $this->myPdo = DbTestSchema::getPdoWrapper();
+    $this->storedProcedure = new StoredProcedure(DbTestSchema::getPdoWrapper());
   });
 
   it('should return empty array if no value found', function () {
-    $results = StoredProcedure::call('get_test_rows', $this->myPdo)
+    $results = $this->storedProcedure
+      ->call('get_test_rows')
       ->with('keyInput', '123')
       ->with('valueInput', 'fff')
       ->execute();
@@ -124,7 +134,8 @@ describe('Results', function () {
   });
 
   it('should return array of objects', function () {
-    $results = StoredProcedure::call('get_test_rows', $this->myPdo)
+    $results = $this->storedProcedure
+      ->call('get_test_rows')
       ->with('keyInput', 'test')
       ->execute();
 

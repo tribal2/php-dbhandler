@@ -29,35 +29,46 @@ class StoredProcedure extends QueryAbstract {
 
   protected function beforeExecute(): void {
     $this->checkIfReadOnly();
+
+    if (empty($this->name)) {
+      throw new Exception(
+        'No stored procedure name has been set. Use the call() method to set the name.',
+        500
+      );
+    }
+
+    if (empty($this->params)) {
+      throw new Exception(
+        "No parameters have been set for stored procedure '{$this->name}'",
+        500
+      );
+    }
   }
 
 
-  public static function call(
+  public static function _call(
     string $name,
     PDOWrapperInterface $pdo,
     ?array $params = NULL,
     ?CommonInterface $common = NULL,
   ): self {
-    return new self($name, $pdo, $params, $common);
+    $instance = new self($pdo, $common);
+    $instance->call($name, $params);
+
+    return $instance;
   }
 
 
   /**
-   * StoredProcedure constructor.
+   * Call a stored procedure
    *
-   * @param string                                  $name
-   * @param PDOWrapperInterface                     $pdo
-   * @param StoredProcedureArgumentInterface[]|null $params
-   * @param CommonInterface|null                    $common
+   * @param string                              $name
+   * @param ?StoredProcedureArgumentInterface[] $params
    */
-  public function __construct(
+  public function call(
     string $name,
-    PDOWrapperInterface $pdo,
     ?array $params = NULL,
-    ?CommonInterface $common = NULL,
-  ) {
-    parent::__construct($pdo, $common);
-
+  ): self {
     $this->name = $name;
 
     if (is_null($params)) {
@@ -66,6 +77,8 @@ class StoredProcedure extends QueryAbstract {
     }
 
     $this->params = $params;
+
+    return $this;
   }
 
 

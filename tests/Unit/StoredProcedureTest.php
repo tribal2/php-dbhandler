@@ -10,9 +10,7 @@ describe('Instance', function () {
 
   it('should generate an instance of StoredProcedure', function () {
     $instance = new StoredProcedure(
-      'dbhandler',
       Mockery::mock(PDOWrapperInterface::class),
-      [],
     );
 
     expect($instance)->toBeInstanceOf(StoredProcedure::class);
@@ -23,8 +21,20 @@ describe('Instance', function () {
 
 describe('Exceptions', function () {
 
+  it('should throw when read-only mode is enabled', function () {
+    StoredProcedure::_call(
+      'get_test_rows',
+      Mockery::mock(PDOWrapperInterface::class, ['isReadOnly' => TRUE]),
+      [ 'valid' => NULL ],
+    )->execute();
+  })->throws(
+    Exception::class,
+    "Can't execute statement. Read only mode is enabled.",
+    409,
+  );
+
   it('should throw with invalid argument name', function () {
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => NULL ],
@@ -52,7 +62,7 @@ describe('with() and getArguments()', function () {
       ->andSet('name', 'valid')
       ->andSet('value', '123');
 
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
@@ -65,12 +75,12 @@ describe('with() and getArguments()', function () {
       ->toHaveKey('valid');
   });
 
-  it('getArguments() should return an empty array if no value is added', function () {
+  test('getArguments() should return an empty array if no value is added', function () {
     $mockArg = Mockery::mock(
       StoredProcedureArgumentInterface::class,
       [ 'hasValue' => FALSE ],
     );
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
@@ -100,7 +110,7 @@ describe('SQL', function () {
       ->shouldReceive('addValueWithPrefix')
       ->andReturn('<BINDED_VALUE>');
 
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       Mockery::mock(PDOWrapperInterface::class),
       [ 'valid' => $mockArg ],
@@ -137,7 +147,7 @@ describe('SQL', function () {
       ->shouldReceive('addValueWithPrefix')
       ->andReturn('<BINDED_VALUE>');
 
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       Mockery::mock(PDOWrapperInterface::class),
       [
@@ -189,7 +199,7 @@ describe('Execute', function () {
       'execute' => $mockPdoStatement,
     ]);
 
-    $sp = new StoredProcedure(
+    $sp = StoredProcedure::_call(
       'get_test_rows',
       $mockPdoWrapper,
       [ 'valid' => $mockArg ],
