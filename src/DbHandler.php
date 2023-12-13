@@ -25,7 +25,7 @@ use Tribal2\DbHandler\Table\Columns;
  * Class to handle database operations
  *
  * @package Tribal2\DbHandler
- * @deprecated Use Tribal2\DbHandler\Queries instead
+ * @deprecated Use Tribal2\DbHandler\Db instead
  */
 class DbHandler {
 

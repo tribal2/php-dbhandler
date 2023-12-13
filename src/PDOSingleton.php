@@ -15,7 +15,7 @@ class PDOSingleton {
    * Objeto PDO
    * @var PDO
    */
-  private static $instance;
+  private static PDOSingleton $instance;
 
   private static ?DbConfig $dbConfig = NULL;
 

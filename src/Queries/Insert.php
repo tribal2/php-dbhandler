@@ -75,7 +75,7 @@ class Insert extends QueryAbstract {
   }
 
 
-  public function value(string $column, $value): self {
+  public function value(string $column, mixed $value): self {
     // Select the last row in the values array
     $row = &$this->values[count($this->values) - 1];
 
@@ -167,7 +167,7 @@ class Insert extends QueryAbstract {
   }
 
 
-  private function checkForCollisions() {
+  private function checkForCollisions(): void {
     $isKeyAutoincrement = count($this->dbColumns->autoincrement) > 0;
     if ($isKeyAutoincrement) return;
 

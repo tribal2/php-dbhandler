@@ -64,7 +64,7 @@ class Update extends QueryAbstract {
   }
 
 
-  public function set(string $column, $value): self {
+  public function set(string $column, mixed $value): self {
     if (!$this->dbColumns->has($column)) {
       $eMsg = "Column '{$column}' does not exist in table '{$this->table}'";
       throw new Exception($eMsg, 400);

@@ -175,7 +175,7 @@ class Where implements WhereInterface {
 
   public static function greaterThanOrEquals(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): Where {
     $common = $common ?? new Common();
@@ -189,7 +189,7 @@ class Where implements WhereInterface {
 
   public static function lessThan(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): Where {
     $common = $common ?? new Common();
@@ -203,7 +203,7 @@ class Where implements WhereInterface {
 
   public static function lessThanOrEquals(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): Where {
     $common = $common ?? new Common();
@@ -478,7 +478,7 @@ class Where implements WhereInterface {
    * @return string Valid operator
    * @throws \Exception If operator is not valid
    */
-  private static function validateOperator($operator) {
+  private static function validateOperator(string $operator): string {
     $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
     if (!in_array($operator, $validOperators)) {
       $msg = "El operador '{$operator}' no es válido.";

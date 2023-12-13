@@ -9,11 +9,11 @@ interface CommonInterface {
   public function quoteWrap(string $column): string;
 
 
-  public function parseColumns($cols): string;
+  public function parseColumns(string|array $cols): string;
 
 
   public function checkValue(
-    $value,
+    mixed $value,
     ?string $column = NULL,
     array $expectedType = [],
   ): int;

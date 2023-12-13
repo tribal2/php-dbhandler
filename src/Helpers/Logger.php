@@ -9,7 +9,7 @@ class Logger extends AbstractLogger implements LoggerInterface {
 
 
   public function log(
-    $level,
+    mixed $level,
     string|\Stringable $message,
     array $context = array()
   ): void {

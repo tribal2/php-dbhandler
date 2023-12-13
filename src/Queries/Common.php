@@ -31,7 +31,7 @@ class Common implements CommonInterface {
    *
    * @return string
    */
-  public function parseColumns($cols): string {
+  public function parseColumns(string|array $cols): string {
     $_cols = is_string($cols)
       ? explode(',', $cols)
       : $cols;

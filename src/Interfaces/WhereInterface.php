@@ -48,21 +48,21 @@ interface WhereInterface {
 
   public static function greaterThanOrEquals(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): WhereInterface;
 
 
   public static function lessThan(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): WhereInterface;
 
 
   public static function lessThanOrEquals(
     string $key,
-    $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): WhereInterface;
 

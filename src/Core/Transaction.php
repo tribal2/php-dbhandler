@@ -106,7 +106,7 @@ class Transaction implements TransactionInterface {
   }
 
 
-  private function errorHandler($msg): bool {
+  private function errorHandler(string $msg): bool {
     $this->logger->error($msg);
 
     if ($this->throw) {
