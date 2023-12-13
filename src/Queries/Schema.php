@@ -18,11 +18,7 @@ class Schema extends QueryAbstract implements SchemaInterface {
   private string $_query;
 
 
-  public function __construct(
-    PDOWrapperInterface $pdo,
-    ?CommonInterface $common = NULL,
-  ) {
-    parent::__construct($pdo, $common);
+  public function afterConstruct(): void {
     $this->database = $this->_pdo->getDbName();
   }
 
