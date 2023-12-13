@@ -2,6 +2,7 @@
 
 namespace Tribal2\DbHandler;
 
+use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Queries\Delete;
 use Tribal2\DbHandler\Queries\Insert;
@@ -13,11 +14,18 @@ class Db {
 
   public function __construct(
     private PDOWrapperInterface $pdo,
+    private ?CacheInterface $cache = NULL,
   ) {}
 
 
   public function select(): Select {
-    return new Select($this->pdo);
+    $select = new Select($this->pdo);
+
+    if ($this->cache) {
+      $select->setCache($this->cache);
+    }
+
+    return $select;
   }
 
 
