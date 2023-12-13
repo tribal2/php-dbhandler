@@ -9,26 +9,6 @@ FROM php:${PHP_VERSION}-cli-alpine${ALPINE_VERSION}
 # Copiamos Composer PHAR desde la imagen de composer
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-RUN set -ex \
-    && apk --update add --no-cache --virtual .php-ext-install-deps \
-        $PHPIZE_DEPS \
-        autoconf \
-    && docker-php-ext-install -j$(nproc) \
-    && runDeps="$( \
-        scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
-            | tr ',' '\n' \
-            | sort -u \
-            | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
-    )" \
-    && apk add --no-cache $runDeps \
-    && docker-php-source delete \
-    && apk del --no-network .php-ext-install-deps \
-    # Set America/Panama timezone
-    && apk --update add --no-cache tzdata \
-    && cp /usr/share/zoneinfo/America/Panama /etc/localtime \
-    && echo "America/Panama" > /etc/timezone \
-    && apk del tzdata
-
 #***********#
 # OS SETUP  #
 #***********#
@@ -41,12 +21,18 @@ RUN set -ex \
         openssh \
         git \
         bash \
+    && apk --update add --no-cache --virtual .php-ext-install-deps $PHPIZE_DEPS \
+    && docker-php-ext-install pdo pdo_mysql \
     # XDebug
-    && apk --update add --no-cache --virtual .php-ext-install-deps \
-        $PHPIZE_DEPS \
-        autoconf \
     && pecl install xdebug \
     && docker-php-ext-enable xdebug \
+    # Set America/Panama timezone
+    && apk --update add --no-cache tzdata \
+    && cp /usr/share/zoneinfo/America/Panama /etc/localtime \
+    && echo "America/Panama" > /etc/timezone \
+    && apk del tzdata \
+    # Cleanup
+    && docker-php-source delete \
     && apk del --no-network .php-ext-install-deps \
     && composer self-update
 
