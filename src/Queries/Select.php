@@ -6,10 +6,12 @@ use Exception;
 use PDO;
 use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
+use Tribal2\DbHandler\Core\FetchPaginatedResult;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Interfaces\CacheAwareInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
+use Tribal2\DbHandler\Interfaces\FetchPaginatedResultInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
@@ -126,6 +128,65 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
+  public function paginate(int $itemsPerPage): self {
+    $this->limit = $itemsPerPage;
+    $this->offset = 0;
+
+    return $this;
+  }
+
+
+  public function fetchPage(?int $page = NULL): FetchPaginatedResultInterface {
+    if ($this->limit === NULL || $this->offset === NULL) {
+      throw new Exception('You must call paginate() before fetchPage().');
+    }
+
+    if ($page !== NULL) {
+      $this->offset = ($page - 1) * $this->limit;
+    }
+
+    $result = $this->execute();
+
+    return new FetchPaginatedResult(
+      data: $result,
+      count: $this->fetchCount(),
+      page: $page ?? ($this->offset / $this->limit + 1),
+      perPage: $this->limit,
+    );
+  }
+
+
+  public function fetchNextPage(): FetchPaginatedResultInterface {
+    $this->offset += $this->limit;
+    return $this->fetchPage();
+  }
+
+
+  public function fetchPreviousPage(): FetchPaginatedResultInterface {
+    if ($this->offset === 0) {
+      throw new Exception('There is no previous page.');
+    }
+
+    $this->offset -= $this->limit;
+    return $this->fetchPage();
+  }
+
+
+  public function fetchFirstPage(): FetchPaginatedResultInterface {
+    $this->offset = 0;
+
+    return $this->fetchPage();
+  }
+
+
+  public function fetchLastPage(): FetchPaginatedResultInterface {
+    $totalPages = ceil($this->fetchCount() / $this->limit);
+    $this->offset = ($totalPages - 1) * $this->limit;
+
+    return $this->fetchPage();
+  }
+
+
   public function fetchMethod(int $method): self {
     $this->fetchMethod = $method;
     return $this;
@@ -168,6 +229,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
 
   public function fetchColumn(?string $colName = NULL): array {
     $actualColumns = $this->columns;
+    $actualFetchMethod = $this->fetchMethod;
 
     $this->columns = [
       $colName ?? $this->checkAndGetSingleColumn(),
@@ -178,6 +240,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
       ->execute();
 
     $this->columns = $actualColumns;
+    $this->fetchMethod = $actualFetchMethod;
 
     return $result;
   }

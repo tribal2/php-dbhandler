@@ -2,6 +2,7 @@
 
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Helpers\Cache;
+use Tribal2\DbHandler\Interfaces\FetchPaginatedResultInterface;
 use Tribal2\DbHandler\Queries\Insert;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
@@ -256,5 +257,124 @@ describe('Caching', function () {
     expect($cachedResults)
       ->toBeArray()
       ->toHaveLength(2);
+  });
+});
+
+
+describe('Pagination', function () {
+
+  beforeEach(function () {
+    $this->select = Select::_from(
+      'test_table',
+      DbTestSchema::getPdoWrapper(),
+    );
+
+    $reflection = new ReflectionClass($this->select);
+    $this->limit = $reflection->getProperty('limit');
+    $this->limit->setAccessible(TRUE);
+    $this->offset = $reflection->getProperty('offset');
+    $this->offset->setAccessible(TRUE);
+  });
+
+  test('fetchPage throws exception if paginate not called before', function () {
+    $this->select->fetchPage();
+  })->throws(
+    Exception::class,
+    'You must call paginate() before fetchPage().'
+  );
+
+  test('paginate sets limit and offset', function () {
+    $this->select->paginate(10);
+
+    expect($this->limit->getValue($this->select))->toBe(10);
+    expect($this->offset->getValue($this->select))->toBe(0);
+  });
+
+  test('fetchPage sets correct offset for specified page', function () {
+    $this->select->paginate(10);
+    $result = $this->select->fetchPage(20);
+
+    expect($result)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($this->offset->getValue($this->select))->toBe(190);
+  });
+
+  test('fetchNextPage increments offset', function () {
+    // Fetch first page
+    $firstPageResult = $this->select->paginate(1)->fetchPage(1);
+
+    expect($firstPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($firstPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($firstPageResult->data[0]->test_table_id)->toBe(1);
+
+    // Fetch next page
+    $secondPageResult = $this->select->fetchNextPage();
+    expect($secondPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($secondPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($firstPageResult->data[0]->test_table_id)->toBe(1);
+  });
+
+  test('fetchPreviousPage decrements offset', function () {
+    $secondPageResult = $this->select->paginate(1)->fetchPage(2);
+    expect($secondPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($secondPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($secondPageResult->data[0]->test_table_id)->toBe(2);
+
+    // Fetch previous page
+    $firstPageResult = $this->select->fetchPreviousPage();
+    expect($firstPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($firstPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($firstPageResult->data[0]->test_table_id)->toBe(1);
+  });
+
+  test('fetchFirstPage', function () {
+    $secondPageResult = $this->select->paginate(1)->fetchPage(2);
+    expect($secondPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($secondPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($secondPageResult->data[0]->test_table_id)->toBe(2);
+
+    // Fetch previous page
+    $firstPageResult = $this->select->fetchFirstPage();
+    expect($firstPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($firstPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($firstPageResult->data[0]->test_table_id)->toBe(1);
+  });
+
+  test('fetchPreviousPage throws exception if already on first page', function () {
+    $this->select->paginate(1)->fetchFirstPage();
+    $this->select->fetchPreviousPage();
+  })->throws(
+    Exception::class,
+    'There is no previous page.',
+  );
+
+  test('fetchLastPage', function () {
+    // Fetch first page
+    $firstPageResult = $this->select->paginate(2)->fetchPage();
+    expect($firstPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($firstPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(2);
+    expect($firstPageResult->data[0]->test_table_id)->toBe(1);
+    expect($firstPageResult->data[1]->test_table_id)->toBe(2);
+
+    // Fetch last page
+    $lastPageResult = $this->select->fetchLastPage();
+    expect($lastPageResult)->toBeInstanceOf(FetchPaginatedResultInterface::class);
+    expect($lastPageResult->data)
+      ->toBeArray()
+      ->toHaveLength(1);
+    expect($lastPageResult->data[0]->test_table_id)->toBe(3);
   });
 });
