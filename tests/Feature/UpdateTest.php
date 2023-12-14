@@ -71,9 +71,11 @@ describe('Update', function () {
       ->fetchAll();
 
     // check if all records were updated
-    expect(count($updatedRows))->toBe(2);
-    expect($updatedRows[0]->value)->toBe('updated value');
-    expect($updatedRows[1]->value)->toBe('updated value');
+    expect($updatedRows->data)
+      ->toBeArray()
+      ->toHaveLength(2);
+    expect($updatedRows->data[0]->value)->toBe('updated value');
+    expect($updatedRows->data[1]->value)->toBe('updated value');
   });
 
 });

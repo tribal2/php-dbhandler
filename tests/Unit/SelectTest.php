@@ -159,7 +159,7 @@ describe('Caching', function () {
       ->withCache()
       ->fetchAll();
 
-    expect($results)
+    expect($results->data)
       ->toBeArray()
       ->toHaveLength(0);
   });
@@ -178,7 +178,7 @@ describe('Caching', function () {
       ->withCache()
       ->fetchAll();
 
-    expect($results)
+    expect($results->data)
       ->toBeArray()
       ->toHaveLength(2);
 
@@ -192,7 +192,7 @@ describe('Caching', function () {
       ->withCache()
       ->fetchAll();
 
-    expect($results2)
+    expect($results2->data)
       ->toBeArray()
       ->toHaveLength(2);
   });
@@ -209,9 +209,9 @@ describe('Pagination', function () {
     ]);
 
     $mockPdoStatement = Mockery::mock(PDOStatement::class);
-    $mockPdoStatement->shouldReceive('fetchAll')->andReturn([
-      'fetchAll' => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-    ]);
+    $mockPdoStatement->shouldReceive('fetchAll')->andReturn(
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    );
     $mockPdoStatement->shouldReceive('fetchAll')->andReturn([10]);
 
     $this->select = Select::_from(

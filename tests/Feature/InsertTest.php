@@ -58,8 +58,8 @@ describe('value()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(3);
-    expect($records[2]->key)->toBe('this is a test key');
+    expect($records->data)->toHaveCount(3);
+    expect($records->data[2]->key)->toBe('this is a test key');
 
     // Second row
     $insertResult2 = $insert->execute();
@@ -68,8 +68,8 @@ describe('value()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(4);
-    expect($records[3]->key)->toBe('this is a test key');
+    expect($records->data)->toHaveCount(4);
+    expect($records->data[3]->key)->toBe('this is a test key');
   });
 
   test('insert records in NON autoincremented table without collision', function () {
@@ -87,8 +87,8 @@ describe('value()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(3);
-    expect($records[2]->key)->toBe('this is a test key');
+    expect($records->data)->toHaveCount(3);
+    expect($records->data[2]->key)->toBe('this is a test key');
 
     // Second row
     $insert->value('test_table_id', 4);
@@ -98,8 +98,8 @@ describe('value()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(4);
-    expect($records[3]->key)->toBe('this is a test key');
+    expect($records->data)->toHaveCount(4);
+    expect($records->data[3]->key)->toBe('this is a test key');
   });
 
   test('insert records in NON autoincremented table WITH collision should throw', function () {
@@ -146,8 +146,8 @@ describe('values()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(1);
-    expect($records[0]->key)->toBe('values()');
+    expect($records->data)->toHaveCount(1);
+    expect($records->data[0]->key)->toBe('values()');
 
     // Second row
     $insertResult2 = $insert->execute();
@@ -156,8 +156,8 @@ describe('values()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(2);
-    expect($records[1]->key)->toBe('values()');
+    expect($records->data)->toHaveCount(2);
+    expect($records->data[1]->key)->toBe('values()');
   });
 
   test('insert records in NON autoincremented table without collision', function () {
@@ -178,8 +178,8 @@ describe('values()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(1);
-    expect($records[0]->key)->toBe('xxx 333');
+    expect($records->data)->toHaveCount(1);
+    expect($records->data[0]->key)->toBe('xxx 333');
 
     // Second row
     $insert->values([
@@ -193,8 +193,8 @@ describe('values()', function () {
 
     // check if the record was inserted
     $records = $select->fetchAll();
-    expect($records)->toHaveCount(2);
-    expect($records[1]->key)->toBe('xxx 444');
+    expect($records->data)->toHaveCount(2);
+    expect($records->data[1]->key)->toBe('xxx 444');
   });
 
   test('insert records in NON autoincremented table WITH collision should throw', function () {
@@ -244,9 +244,10 @@ describe('rows()', function () {
       ->where(Where::like('key', 'rows() test%'))
       ->fetchAll();
 
-    expect($records)->toBeArray();
-    expect($records)->toHaveCount(3);
-    expect($records[2]->key)->toBe('rows() test 3');
+    expect($records->data)
+      ->toBeArray()
+      ->toHaveCount(3);
+    expect($records->data[2]->key)->toBe('rows() test 3');
   });
 
 });

@@ -3,6 +3,7 @@
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Helpers\Cache;
 use Tribal2\DbHandler\Interfaces\FetchPaginatedResultInterface;
+use Tribal2\DbHandler\Interfaces\FetchResultInterface;
 use Tribal2\DbHandler\Queries\Insert;
 use Tribal2\DbHandler\Queries\Select;
 use Tribal2\DbHandler\Queries\Where;
@@ -28,8 +29,11 @@ describe('fetchAll()', function () {
     $result = Select::_from('test_table', $this->myPdo)
       ->fetchAll();
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveCount(2);
+    expect($result)->toBeInstanceOf(FetchResultInterface::class);
+    expect($result->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($result->count)->toBe(2);
   });
 
   test('return all reversed', function () {
@@ -37,10 +41,11 @@ describe('fetchAll()', function () {
       ->orderBy('test_table_id', OrderByDirectionEnum::DESC)
       ->fetchAll();
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveCount(2);
-    expect($result[0]->test_table_id)->toBe(2);
-    expect($result[0]->value)->toBe('Test value 2');
+    expect($result->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($result->data[0]->test_table_id)->toBe(2);
+    expect($result->data[0]->value)->toBe('Test value 2');
   });
 
 });
@@ -91,18 +96,20 @@ describe('fetchColumn()', function () {
       ->column('value')
       ->fetchColumn();
 
-    expect($res)->toBeArray();
-    expect($res)->toHaveCount(2);
-    expect($res[0])->toBe('Test value 1');
+    expect($res->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($res->data[0])->toBe('Test value 1');
   });
 
   test('passing a column name', function () {
     $res = Select::_from('test_table', $this->myPdo)
       ->fetchColumn('value');
 
-    expect($res)->toBeArray();
-    expect($res)->toHaveCount(2);
-    expect($res[0])->toBe('Test value 1');
+    expect($res->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($res->data[0])->toBe('Test value 1');
   });
 
   test('passing a column name when other columns are already set', function () {
@@ -110,9 +117,10 @@ describe('fetchColumn()', function () {
       ->columns(['test_table_id', 'value'])
       ->fetchColumn('value');
 
-    expect($res)->toBeArray();
-    expect($res)->toHaveCount(2);
-    expect($res[0])->toBe('Test value 1');
+    expect($res->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($res->data[0])->toBe('Test value 1');
   });
 
 });
@@ -177,20 +185,22 @@ describe('functions', function () {
     $res = Select::_from('test_table', $this->myPdo)
       ->fetchColumn('DISTINCT(`key`)');
 
-    expect($res)->toBeArray();
-    expect($res)->toHaveCount(2);
-    expect($res[0])->toBe('test1');
-    expect($res[1])->toBe('test2');
+    expect($res->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($res->data[0])->toBe('test1');
+    expect($res->data[1])->toBe('test2');
   });
 
   test('DISTINCT() using method', function () {
     $res = Select::_from('test_table', $this->myPdo)
       ->fetchDistincts('key');
 
-    expect($res)->toBeArray();
-    expect($res)->toHaveCount(2);
-    expect($res[0])->toBe('test1');
-    expect($res[1])->toBe('test2');
+    expect($res->data)
+      ->toBeArray()
+      ->toHaveCount(2);
+    expect($res->data[0])->toBe('test1');
+    expect($res->data[1])->toBe('test2');
   });
 
   test('COUNT()', function () {
@@ -231,7 +241,7 @@ describe('Caching', function () {
       ->withCache()
       ->fetchAll();
 
-    expect($results)
+    expect($results->data)
       ->toBeArray()
       ->toHaveLength(2);
 
@@ -245,7 +255,7 @@ describe('Caching', function () {
     $resultsAfterInsert = Select::_from('test_table', $this->myPdo)
       ->fetchAll();
 
-    expect($resultsAfterInsert)
+    expect($resultsAfterInsert->data)
       ->toBeArray()
       ->toHaveLength(3);
 
@@ -254,7 +264,7 @@ describe('Caching', function () {
       ->withCache()
       ->fetchAll();
 
-    expect($cachedResults)
+    expect($cachedResults->data)
       ->toBeArray()
       ->toHaveLength(2);
   });

@@ -7,11 +7,13 @@ use PDO;
 use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Core\FetchPaginatedResult;
+use Tribal2\DbHandler\Core\FetchResult;
 use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Interfaces\CacheAwareInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\FetchPaginatedResultInterface;
+use Tribal2\DbHandler\Interfaces\FetchResultInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
@@ -193,12 +195,14 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
-  public function fetchAll(): array {
-    return $this->execute();
+  public function fetchAll(): FetchResultInterface {
+    $resultArr = $this->execute();
+
+    return new FetchResult($resultArr);
   }
 
 
-  public function fetchFirst(): ?stdClass {
+  public function fetchFirst(): mixed {
     $actualLimit = $this->limit;
 
     $result = $this
@@ -211,7 +215,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
-  public function fetchLast(): ?stdClass {
+  public function fetchLast(): mixed {
     $actualLimit = $this->limit;
     $actualOffset = $this->offset;
 
@@ -227,7 +231,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
-  public function fetchColumn(?string $colName = NULL): array {
+  public function fetchColumn(?string $colName = NULL): FetchResultInterface {
     $actualColumns = $this->columns;
     $actualFetchMethod = $this->fetchMethod;
 
@@ -242,7 +246,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
     $this->columns = $actualColumns;
     $this->fetchMethod = $actualFetchMethod;
 
-    return $result;
+    return new FetchResult($result);
   }
 
 
@@ -254,11 +258,13 @@ class Select extends QueryAbstract implements CacheAwareInterface {
 
     $this->limit = $actualLimit;
 
-    return $result[0] ?? NULL;
+    return $result->count === 0
+      ? NULL
+      : $result->data[0];
   }
 
 
-  public function fetchDistincts(?string $colName = NULL): array {
+  public function fetchDistincts(?string $colName = NULL): FetchResultInterface {
     $_colName = $colName ?? $this->checkAndGetSingleColumn();
     return $this->fetchColumn("DISTINCT(`{$_colName}`)");
   }
