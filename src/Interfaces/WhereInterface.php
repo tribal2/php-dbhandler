@@ -16,6 +16,18 @@ interface WhereInterface {
   );
 
 
+  public function setKey(string $key): void;
+
+
+  public function setValue(mixed $value): void;
+
+
+  public function setOperator(string $operator): void;
+
+
+  public function setPdoType(int $pdoType): void;
+
+
   public function getSql(PDOBindBuilderInterface $bindBuilder): string;
 
 
@@ -41,7 +53,7 @@ interface WhereInterface {
 
   public static function greaterThan(
     string $key,
-    mixed $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
   ): WhereInterface;
 

@@ -36,6 +36,26 @@ class Where implements WhereInterface {
   }
 
 
+  public function setKey(string $key): void {
+    $this->key = $key;
+  }
+
+
+  public function setValue(mixed $value): void {
+    $this->value = $value;
+  }
+
+
+  public function setOperator(string $operator): void {
+    $this->operator = $operator;
+  }
+
+
+  public function setPdoType(int $pdoType): void {
+    $this->pdoType = $pdoType;
+  }
+
+
   public function getSql(PDOBindBuilderInterface $bindBuilder): string {
     if (is_array($this->value))
       return $this->getSqlForArrayOfValues($bindBuilder);
