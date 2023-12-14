@@ -15,7 +15,7 @@ class PDOSingleton {
    * Objeto PDO
    * @var PDO
    */
-  private static PDOSingleton $instance;
+  private static PDO $instance;
 
   private static ?DbConfig $dbConfig = NULL;
 
@@ -30,7 +30,7 @@ class PDOSingleton {
    * @return PDO
    */
   final public static function get(): PDO {
-    if (!is_null(self::$instance)) {
+    if (isset(self::$instance)) {
       return self::$instance;
     }
 
