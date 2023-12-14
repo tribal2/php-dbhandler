@@ -82,7 +82,7 @@ describe('fetchColumn()', function () {
       ->fetchColumn();
   })->throws(
     Exception::class,
-    'Only one column can be selected',
+    'There are more than one column to select. Provide a column name to this method.',
   );
 
   test('using column() to set the column', function () {
@@ -129,7 +129,7 @@ describe('fetchValue()', function () {
       ->fetchValue();
   })->throws(
     Exception::class,
-    'Only one column can be selected',
+    'There are more than one column to select. Provide a column name to this method.',
   );
 
   test('using column() to set the column', function () {

@@ -73,7 +73,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   public function columns(array $columns): self {
     foreach ($columns as $column) {
       if (!is_string($column)) {
-        throw new \Exception('Each element of $columns must be a string');
+        throw new Exception('Each element of $columns must be a string');
       }
 
       $this->columns[] = $column;
@@ -96,10 +96,20 @@ class Select extends QueryAbstract implements CacheAwareInterface {
 
   public function having(WhereInterface $having): self {
     if (count($this->groupBy) === 0) {
-      throw new \Exception('HAVING clause requires GROUP BY clause');
+      throw new Exception('HAVING clause requires GROUP BY clause');
     }
 
     $this->having = $having;
+    return $this;
+  }
+
+
+  public function orderBy(
+    string $column,
+    OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
+  ): self {
+    $quotedCol = $this->_common->quoteWrap($column);
+    $this->orderBy[] = "{$quotedCol} {$direction->value}";
     return $this;
   }
 
@@ -116,16 +126,6 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
-  public function orderBy(
-    string $column,
-    OrderByDirectionEnum $direction = OrderByDirectionEnum::ASC,
-  ): self {
-    $quotedCol = $this->_common->quoteWrap($column);
-    $this->orderBy[] = "{$quotedCol} {$direction->value}";
-    return $this;
-  }
-
-
   public function fetchMethod(int $method): self {
     $this->fetchMethod = $method;
     return $this;
@@ -138,46 +138,66 @@ class Select extends QueryAbstract implements CacheAwareInterface {
 
 
   public function fetchFirst(): ?stdClass {
+    $actualLimit = $this->limit;
+
     $result = $this
       ->limit(1)
       ->execute();
+
+    $this->limit = $actualLimit;
+
+    return $result[0] ?? NULL;
+  }
+
+
+  public function fetchLast(): ?stdClass {
+    $actualLimit = $this->limit;
+    $actualOffset = $this->offset;
+
+    $result = $this
+      ->limit(1)
+      ->offset($this->fetchCount() - 1)
+      ->execute();
+
+    $this->limit = $actualLimit;
+    $this->offset = $actualOffset;
 
     return $result[0] ?? NULL;
   }
 
 
   public function fetchColumn(?string $colName = NULL): array {
-    if (!is_null($colName)) {
-      $this->columns = [ $colName ];
-    }
+    $actualColumns = $this->columns;
 
-    // Check if there is only one column
-    if (is_null($colName) && count($this->columns) !== 1) {
-      throw new \Exception('Only one column can be selected');
-    }
+    $this->columns = [
+      $colName ?? $this->checkAndGetSingleColumn(),
+    ];
 
     $result = $this
       ->fetchMethod(PDO::FETCH_COLUMN)
       ->execute();
+
+    $this->columns = $actualColumns;
 
     return $result;
   }
 
 
   public function fetchValue(?string $colName = NULL): ?string {
+    $actualLimit = $this->limit;
+
     $this->limit(1);
     $result = $this->fetchColumn($colName);
+
+    $this->limit = $actualLimit;
 
     return $result[0] ?? NULL;
   }
 
 
-  public function fetchDistincts(string $colName): array {
-    if (is_null($colName)) {
-      throw new Exception('Column name must be specified');
-    }
-
-    return $this->fetchColumn("DISTINCT(`{$colName}`)");
+  public function fetchDistincts(?string $colName = NULL): array {
+    $_colName = $colName ?? $this->checkAndGetSingleColumn();
+    return $this->fetchColumn("DISTINCT(`{$_colName}`)");
   }
 
 
@@ -243,6 +263,23 @@ class Select extends QueryAbstract implements CacheAwareInterface {
     ];
 
     return implode(' ', array_filter($queryParts)) . ';';
+  }
+
+
+  private function checkAndGetSingleColumn(): string {
+    if (count($this->columns) === 0) {
+      $eNoColMsg = 'There are no columns to select. Provide a column name to '
+        . 'this method or use ->column(<column>) before.';
+      throw new Exception($eNoColMsg);
+    }
+
+    if (count($this->columns) !== 1) {
+      $eManyColMsg = 'There are more than one column to select. Provide a '
+        . 'column name to this method.';
+      throw new Exception($eManyColMsg);
+    }
+
+    return $this->columns[0];
   }
 
 
