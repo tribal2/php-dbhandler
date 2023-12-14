@@ -104,13 +104,13 @@ class Select extends QueryAbstract implements CacheAwareInterface {
   }
 
 
-  public function limit(int $limit): self {
+  public function limit(?int $limit = NULL): self {
     $this->limit = $limit;
     return $this;
   }
 
 
-  public function offset(int $offset): self {
+  public function offset(?int $offset = NULL): self {
     $this->offset = $offset;
     return $this;
   }
@@ -182,7 +182,23 @@ class Select extends QueryAbstract implements CacheAwareInterface {
 
 
   public function fetchCount(): int {
-    $result = $this->fetchValue('COUNT(*)');
+    // Store actual value of columns, limit and offset;
+    $actualColumns = $this->columns;
+    $actualLimit = $this->limit;
+    $actualOffset = $this->offset;
+
+    // Reset values and execute query
+    $result = $this
+      ->limit()
+      ->offset()
+      ->fetchValue('COUNT(*)');
+
+    // Restore values
+    $this->columns = $actualColumns;
+    $this->limit = $actualLimit;
+    $this->offset = $actualOffset;
+
+    // Return result
     return (int)$result;
   }
 
