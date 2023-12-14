@@ -119,8 +119,8 @@ class Where implements WhereInterface {
   }
 
 
-  public static function or(WhereInterface ...$whereClauses): Where {
-    return new Where(
+  public static function or(WhereInterface ...$whereClauses): self {
+    return new self(
       '',
       [
         'whereClauses' => $whereClauses,
@@ -130,8 +130,8 @@ class Where implements WhereInterface {
   }
 
 
-  public static function and(WhereInterface ...$whereClauses): Where {
-    return new Where(
+  public static function and(WhereInterface ...$whereClauses): self {
+    return new self(
       '',
       [
         'whereClauses' => $whereClauses,
@@ -145,18 +145,17 @@ class Where implements WhereInterface {
     string $key,
     mixed $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-
+  ): self {
     if (is_array($value)) return self::in($key, $value, $common);
 
+    $common = $common ?? new Common();
     $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
       SqlValueTypeEnum::FLOAT,
       SqlValueTypeEnum::INTEGER,
       SqlValueTypeEnum::BOOLEAN,
     ]);
-    return new Where($key, $value, '=', $pdoType, $common);
+    return new self($key, $value, '=', $pdoType, $common);
   }
 
 
@@ -164,32 +163,22 @@ class Where implements WhereInterface {
     string $key,
     mixed $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-
+  ): self {
     if (is_array($value)) return self::notIn($key, $value, $common);
 
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::STRING,
-      SqlValueTypeEnum::FLOAT,
-      SqlValueTypeEnum::INTEGER,
-      SqlValueTypeEnum::BOOLEAN,
-    ]);
-    return new Where($key, $value, '<>', $pdoType, $common);
+    $where = self::equals($key, $value, $common);
+    $where->setOperator('<>');
+
+    return $where;
   }
 
 
   public static function greaterThan(
     string $key,
-    mixed $value,
+    int|float $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::FLOAT,
-      SqlValueTypeEnum::INTEGER,
-    ]);
-    return new Where($key, $value, '>', $pdoType, $common);
+  ): self {
+    return self::numericComparison($key, $value, '>', $common);
   }
 
 
@@ -197,13 +186,8 @@ class Where implements WhereInterface {
     string $key,
     int|float $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::FLOAT,
-      SqlValueTypeEnum::INTEGER,
-    ]);
-    return new Where($key, $value, '>=', $pdoType, $common);
+  ): self {
+    return self::numericComparison($key, $value, '>=', $common);
   }
 
 
@@ -211,13 +195,8 @@ class Where implements WhereInterface {
     string $key,
     int|float $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::FLOAT,
-      SqlValueTypeEnum::INTEGER,
-    ]);
-    return new Where($key, $value, '<', $pdoType, $common);
+  ): self {
+    return self::numericComparison($key, $value, '<', $common);
   }
 
 
@@ -225,13 +204,8 @@ class Where implements WhereInterface {
     string $key,
     int|float $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::FLOAT,
-      SqlValueTypeEnum::INTEGER,
-    ]);
-    return new Where($key, $value, '<=', $pdoType, $common);
+  ): self {
+    return self::numericComparison($key, $value, '<=', $common);
   }
 
 
@@ -239,12 +213,12 @@ class Where implements WhereInterface {
     string $key,
     string $value,
     ?CommonInterface $common = NULL,
-  ): Where {
+  ): self {
     $common = $common ?? new Common();
     $pdoType = $common->checkValue($value, $key, [
       SqlValueTypeEnum::STRING,
     ]);
-    return new Where($key, $value, 'LIKE', $pdoType, $common);
+    return new self($key, $value, 'LIKE', $pdoType, $common);
   }
 
 
@@ -252,12 +226,11 @@ class Where implements WhereInterface {
     string $key,
     string $value,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-    $pdoType = $common->checkValue($value, $key, [
-      SqlValueTypeEnum::STRING,
-    ]);
-    return new Where($key, $value, 'NOT LIKE', $pdoType, $common);
+  ): self {
+    $where = self::like($key, $value, $common);
+    $where->setOperator('NOT LIKE');
+
+    return $where;
   }
 
 
@@ -265,9 +238,8 @@ class Where implements WhereInterface {
     string $key,
     array $values,
     ?CommonInterface $common = NULL,
-  ): Where {
+  ): self {
     $common = $common ?? new Common();
-
     foreach ($values as $value) {
       $common->checkValue($value, $key, [
         SqlValueTypeEnum::STRING,
@@ -276,7 +248,7 @@ class Where implements WhereInterface {
         SqlValueTypeEnum::BOOLEAN,
       ]);
     }
-    return new Where($key, $values, 'IN', PDO::PARAM_STR, $common);
+    return new self($key, $values, 'IN', PDO::PARAM_STR, $common);
   }
 
 
@@ -284,18 +256,11 @@ class Where implements WhereInterface {
     string $key,
     array $values,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
+  ): self {
+    $where = self::in($key, $values, $common);
+    $where->setOperator('NOT IN');
 
-    foreach ($values as $value) {
-      $common->checkValue($value, $key, [
-        SqlValueTypeEnum::STRING,
-        SqlValueTypeEnum::FLOAT,
-        SqlValueTypeEnum::INTEGER,
-        SqlValueTypeEnum::BOOLEAN,
-      ]);
-    }
-    return new Where($key, $values, 'NOT IN', PDO::PARAM_STR, $common);
+    return $where;
   }
 
 
@@ -304,16 +269,8 @@ class Where implements WhereInterface {
     int|float $value1,
     int|float $value2,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
-
-    foreach ([ $value1, $value2 ] as $value) {
-      $common->checkValue($value, $key, [
-        SqlValueTypeEnum::FLOAT,
-        SqlValueTypeEnum::INTEGER,
-      ]);
-    }
-    return new Where(
+  ): self {
+    return new self(
       $key,
       [ $value1, $value2 ],
       'BETWEEN',
@@ -328,35 +285,24 @@ class Where implements WhereInterface {
     int|float $value1,
     int|float $value2,
     ?CommonInterface $common = NULL,
-  ): Where {
-    $common = $common ?? new Common();
+  ): self {
+    $where = self::between($key, $value1, $value2, $common);
+    $where->setOperator('NOT BETWEEN');
 
-    foreach ([ $value1, $value2 ] as $value) {
-      $common->checkValue($value, $key, [
-        SqlValueTypeEnum::FLOAT,
-        SqlValueTypeEnum::INTEGER,
-      ]);
-    }
-    return new Where(
-      $key,
-      [ $value1, $value2 ],
-      'NOT BETWEEN',
-      PDO::PARAM_STR,
-      $common,
-    );
+    return $where;
   }
 
 
   public static function isNull(
     string $key,
     ?CommonInterface $common = NULL,
-  ): Where {
-    return new Where(
+  ): self {
+    return new self(
       $key,
       NULL,
       'IS',
       PDO::PARAM_NULL,
-      $common ?? new Common(),
+      $common,
     );
   }
 
@@ -364,14 +310,27 @@ class Where implements WhereInterface {
   public static function isNotNull(
     string $key,
     ?CommonInterface $common = NULL,
-  ): Where {
-    return new Where(
-      $key,
-      NULL,
-      'IS NOT',
-      PDO::PARAM_NULL,
-      $common ?? new Common(),
-    );
+  ): self {
+    $where = self::isNull($key, $common);
+    $where->setOperator('IS NOT');
+
+    return $where;
+  }
+
+
+  private static function numericComparison(
+    string $key,
+    int|float $value,
+    string $operator,
+    ?CommonInterface $common = NULL,
+  ): self {
+    $common = $common ?? new Common();
+    $pdoType = $common->checkValue($value, $key, [
+      SqlValueTypeEnum::FLOAT,
+      SqlValueTypeEnum::INTEGER,
+    ]);
+
+    return new self($key, $value, $operator, $pdoType, $common);
   }
 
 
@@ -497,6 +456,7 @@ class Where implements WhereInterface {
    *
    * @return string Valid operator
    * @throws \Exception If operator is not valid
+   * @deprecated
    */
   private static function validateOperator(string $operator): string {
     $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];
