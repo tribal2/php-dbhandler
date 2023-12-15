@@ -1,1 +1,5 @@
 vendor
+.env
+phpunit.xml
+coverage
+coverage.xml

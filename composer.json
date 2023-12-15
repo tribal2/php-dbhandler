@@ -2,25 +2,44 @@
     "name": "tribal2/db-handler",
     "description": "Library to interact with MySQL databases",
     "type": "library",
-    "require": {
-        "panique/pdo-debug": "^0.2.0"
+    "license": "MIT",
+    "keywords": [
+        "database",
+        "mysql",
+        "pdo",
+        "query",
+        "builder"
+    ],
+    "authors": [
+        {
+            "name": "Ricardo Tribaldos",
+            "email": "rtribaldos@barustudio.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/tribal2/php-dbhandler/issues",
+        "source": "https://github.com/tribal2/php-dbhandler"
     },
-    "require-dev": {
-        "pestphp/pest": "^2.24",
-        "mockery/mockery": "^1.6"
-    },
-    "license": "private",
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "Tribal2\\DbHandler\\": "src/"
         }
     },
-    "authors": [
-        {
-            "name": "Ricardo Tribaldos"
-        }
-    ],
-    "minimum-stability": "stable",
+    "require": {
+        "panique/pdo-debug": "^0.2.0",
+        "psr/log": "^3.0",
+        "psr/simple-cache": "^3.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.24",
+        "mockery/mockery": "^1.6",
+        "pestphp/pest-plugin-type-coverage": "^2.5"
+    },
+    "scripts": {
+        "test": "vendor/bin/pest --coverage --min=90 --coverage-html=coverage",
+        "test-ci": "vendor/bin/pest tests/Unit --coverage --coverage-clover ./coverage.xml"
+    },
     "config": {
         "allow-plugins": {
             "pestphp/pest-plugin": true

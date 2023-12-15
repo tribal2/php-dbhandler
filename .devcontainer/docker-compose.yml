@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  dbhandler:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+      args:
+        ENVIRONMENT: ${ENVIRONMENT}
+        PHP_VERSION: ${PHP_VERSION}
+        ALPINE_VERSION: ${ALPINE_VERSION}
+    container_name: dbhandler-devcontainer
+    restart: unless-stopped
+    env_file: .env
+    #user: "1000:1000"
+    volumes:
+      - ".cfg/php/php.ini:/usr/local/etc/php/php.ini:ro"
+      - "..:/dbhandler"
+      - "dbhandler-vendor:/dbhandler/vendor"
+    command: "tail -f /dev/null"
+
+volumes:
+  dbhandler-vendor:
