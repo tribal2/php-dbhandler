@@ -1,6 +1,5 @@
 {
     "name": "tribal2/db-handler",
-    "version": "0.0.1",
     "description": "Library to interact with MySQL databases",
     "type": "library",
     "license": "MIT",
