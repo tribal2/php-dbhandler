@@ -1,6 +1,40 @@
-# PHP-DbHandler
+<h1 align="center">PHP-DbHandler</h1>
+
+<p align="center">
+  <a href="https://github.com/tribal2/php-dbhandler" title="CI GitHub action"><img alt="CI GitHub action status" src="https://github.com/tribal2/php-dbhandler/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://codecov.io/gh/tribal2/php-dbhandler" title="Code coverage"><img alt="Codecov Code Coverage" src="https://img.shields.io/codecov/c/github/tribal2/php-dbhandler?logo=codecov"></a>
+  <a href="https://github.com/tribal2/php-dbhandler/blob/main/LICENSE" title="license"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-428f7e.svg?logo=open%20source%20initiative&logoColor=white&labelColor=555555"></a>
+  <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-8.2%20to%208.4-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a>
+</p>
 
 PHP-DbHandler is a PHP library designed to simplify interactions with MySQL databases. It offers a comprehensive set of tools for building and executing queries, managing transactions, and handling database schema through PDO connections.
+
+## Contents
+
+* [Features](#features)
+* [Installation](#installation)
+* [Usage](#usage)
+* [Creating `Where` and `Having` clauses](#creating--where--and--having--clauses)
+  + [Comparison operators](#comparison-operators)
+  + [Logical operators](#logical-operators)
+  + [`or` and `and` operators](#-or--and--and--operators)
+* [Creating and executing queries](#creating-and-executing-queries)
+  + [SELECT](#select)
+  + [INSERT](#insert)
+  + [UPDATE](#update)
+  + [DELETE](#delete)
+  + [STORED PROCEDURES](#stored-procedures)
+* [Transactions](#transactions)
+  + [Global Transaction Management](#global-transaction-management)
+* [Contributing](#contributing)
+  + [Contribution Process](#contribution-process)
+  + [Using the Development Container](#using-the-development-container)
+  + [Testing with Pest](#testing-with-pest)
+  + [Submitting Contributions](#submitting-contributions)
+  + [Review Process](#review-process)
+  + [Questions and Discussions](#questions-and-discussions)
+* [License](#license)
+* [Support](#support)
 
 ## Features
 
