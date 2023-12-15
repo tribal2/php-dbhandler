@@ -1,7 +1,6 @@
 <?php
 
 use Tribal2\DbHandler\Db;
-use Psr\SimpleCache\CacheInterface;
 use Tribal2\DbHandler\Core\Transaction;
 use Tribal2\DbHandler\Helpers\Cache;
 use Tribal2\DbHandler\Queries\Delete;

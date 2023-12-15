@@ -3,7 +3,6 @@
 namespace Tribal2\DbHandler\Queries;
 
 use Exception;
-use PDO;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
