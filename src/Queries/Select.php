@@ -369,6 +369,7 @@ class Select extends QueryAbstract implements CacheAwareInterface {
    *
    * @return string The generated query
    * @deprecated Use Select::from instead
+   * @codeCoverageIgnore
    */
   public static function queryFromArray(
     PDOBindBuilderInterface $bindBuilder,

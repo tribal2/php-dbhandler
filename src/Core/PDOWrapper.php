@@ -39,13 +39,14 @@ class PDOWrapper implements PDOWrapperInterface {
   public function __construct(
     ?DbConfigInterface $config = NULL,
     ?LoggerInterface $logger = NULL,
+    ?PDO $pdo = NULL,
   ) {
     $this->_logger = $logger ?? new NullLogger();
 
     if (!is_null($config)) {
       $this->_config = $config;
 
-      $this->_pdo = new PDO(
+      $this->_pdo = $pdo ?? new PDO(
         $config->getConnString(),
         $config->getUser(),
         $config->getPassword()
@@ -63,7 +64,12 @@ class PDOWrapper implements PDOWrapperInterface {
       $stmt = $this->_prepare($query, $bindBuilder);
 
       // Execute statement
-      $this->_execute($stmt);
+      $this->_logger->debug("Executing statement: {$stmt->queryString}");
+      if (!$stmt->execute()) {
+        $eMsg = "Error executing statement: {$stmt->queryString}";
+        $this->_logger->error($eMsg);
+        throw new Exception($eMsg);
+      }
 
       return $stmt;
     } catch (Exception $e) {
@@ -139,17 +145,6 @@ class PDOWrapper implements PDOWrapperInterface {
     $bindBuilder->bindToStatement($stmt);
 
     return $stmt;
-  }
-
-
-  private function _execute(PDOStatement $stmt): void {
-    $this->_logger->debug("Executing statement: {$stmt->queryString}");
-
-    if (!$stmt->execute()) {
-      $eMsg = "Error executing statement: {$stmt->queryString}";
-      $this->_logger->error($eMsg);
-      throw new Exception($eMsg);
-    }
   }
 
 

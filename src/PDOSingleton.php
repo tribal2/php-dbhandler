@@ -9,6 +9,7 @@ use PDO;
  * Class PDOSingleton
  *
  * @deprecated
+ * @codeCoverageIgnore
  */
 class PDOSingleton {
   /**

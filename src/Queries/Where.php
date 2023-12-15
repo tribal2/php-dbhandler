@@ -342,6 +342,7 @@ class Where implements WhereInterface {
    *
    * @return string SQL 'where' clause
    * @deprecated
+   * @codeCoverageIgnore
    */
   public static function generate(
     PDOBindBuilderInterface $bindBuilder,
@@ -390,6 +391,7 @@ class Where implements WhereInterface {
    *
    * @return string SQL 'where' clause
    * @deprecated
+   * @codeCoverageIgnore
    */
   private static function generateComplex(
     PDOBindBuilder $bindBuilder,
@@ -457,6 +459,7 @@ class Where implements WhereInterface {
    * @return string Valid operator
    * @throws \Exception If operator is not valid
    * @deprecated
+   * @codeCoverageIgnore
    */
   private static function validateOperator(string $operator): string {
     $validOperators = ['=', '!=', '>', '<', '>=', '<=', 'LIKE'];

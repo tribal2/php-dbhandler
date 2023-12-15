@@ -48,3 +48,45 @@ describe('SQL Generation', function () {
   });
 
 });
+
+
+describe('Execution', function () {
+
+  beforeEach(function() {
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+    ]);
+
+    $mockPdo = Mockery::mock(PDOWrapperInterface::class, [
+      'isReadOnly' => FALSE,
+      'execute' => Mockery::mock(PDOStatement::class, [
+        'rowCount' => 1,
+      ])
+    ]);
+
+    $this->delete = Delete::_from(
+      'test_table',
+      $mockPdo,
+      $mockCommon,
+    );
+  });
+
+  it('should throw if no where clause is provided', function () {
+    $this->delete->execute();
+  })->throws(
+    Exception::class,
+    'A WHERE clause is required for DELETE operations',
+  );
+
+  it('should execute the statement', function () {
+    $mockWhere = Mockery::mock(WhereInterface::class, [ 'getSql' => '<WHERE>' ]);
+
+    $result = $this->delete
+      ->where($mockWhere)
+      ->execute();
+
+    expect($result)->toBe(1);
+  });
+
+});

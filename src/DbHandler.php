@@ -26,6 +26,7 @@ use Tribal2\DbHandler\Table\Columns;
  *
  * @package Tribal2\DbHandler
  * @deprecated Use Tribal2\DbHandler\Db instead
+ * @codeCoverageIgnore
  */
 class DbHandler {
 

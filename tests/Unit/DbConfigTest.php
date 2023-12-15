@@ -30,7 +30,22 @@ describe('DbConfig', function () {
       password: 'password'
     );
 
-    $expectedConnString = 'mysql:host=localhost; port=3306; dbname=test_db; charset=utf8;';
+    $expectedConnString = 'mysql:host=localhost; port=3306; dbname=test_db; charset=utf8mb4;';
+    expect($config->getConnString())->toEqual($expectedConnString);
+  });
+
+  test('getConnString() generates correct connection string using setters', function () {
+    $config = new DbConfig(
+      dbName: 'test_db',
+      user: 'root',
+      password: 'password'
+    );
+
+    $config->withHost('mariadb');
+    $config->withPort(1234);
+    $config->withCharset('utf8');
+
+    $expectedConnString = 'mysql:host=mariadb; port=1234; dbname=test_db; charset=utf8;';
     expect($config->getConnString())->toEqual($expectedConnString);
   });
 
@@ -80,12 +95,21 @@ describe('DbConfig', function () {
       ->toBeBool()
       ->toBeFalse();
 
+    // Turning on read only mode
     $config->withReadOnlyMode();
     $isReadOnly = $config->isReadOnly();
 
     expect($isReadOnly)
       ->toBeBool()
       ->toBeTrue();
+
+    // Turning off read only mode
+    $config->withReadOnlyModeOff();
+    $isReadOnly = $config->isReadOnly();
+
+    expect($isReadOnly)
+      ->toBeBool()
+      ->toBeFalse();
   });
 
 });

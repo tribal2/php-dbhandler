@@ -18,7 +18,7 @@ class DbConfig implements DbConfigInterface {
     private ?string $password = NULL,
     private string $host = 'localhost',
     private int $port = 3306,
-    private string $encoding = 'utf8',
+    private string $encoding = 'utf8mb4',
     private bool $readOnly = FALSE,
   ) {}
 

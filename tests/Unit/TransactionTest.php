@@ -131,10 +131,16 @@ describe('check()', function () {
 describe('error handling with $throw flag enabled', function () {
 
   beforeEach(function () {
-    $this->transactionFactory = function (bool $inTransaction) {
+    $this->transactionFactory = function (
+      bool $inTransaction,
+      bool $opResult = TRUE,
+    ) {
       $tx = new Transaction(
         Mockery::mock(PDOWrapperInterface::class, [
           'inTransaction' => $inTransaction,
+          'beginTransaction' => $opResult,
+          'commit' => $opResult,
+          'rollBack' => $opResult,
         ]),
       );
 
@@ -149,6 +155,11 @@ describe('error handling with $throw flag enabled', function () {
     $transaction->begin();
   })->throws(Exception::class);
 
+  test('begin() with error on PDO', function () {
+    $transaction = ($this->transactionFactory)(inTransaction: FALSE, opResult: FALSE);
+    $transaction->begin();
+  })->throws(Exception::class);
+
   test('commit() with no active transaction started', function () {
     $transaction = ($this->transactionFactory)(inTransaction: FALSE);
     $transaction->commit();
@@ -160,8 +171,18 @@ describe('error handling with $throw flag enabled', function () {
     $transaction->commit();
   })->throws(Exception::class);
 
+  test('commit() with error on PDO', function () {
+    $transaction = ($this->transactionFactory)(inTransaction: TRUE, opResult: FALSE);
+    $transaction->commit();
+  })->throws(Exception::class);
+
   test('rollback() with no active transaction started', function () {
     $transaction = ($this->transactionFactory)(inTransaction: FALSE);
+    $transaction->rollback();
+  })->throws(Exception::class);
+
+  test('rollback() with error on PDO', function () {
+    $transaction = ($this->transactionFactory)(inTransaction: TRUE, opResult: FALSE);
     $transaction->rollback();
   })->throws(Exception::class);
 
