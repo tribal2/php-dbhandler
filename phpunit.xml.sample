@@ -15,7 +15,7 @@
         </include>
     </source>
     <php>
-        <env name="MYSQL_HOST" value="localhost" />
+        <env name="MYSQL_HOST" value="mysql" />
         <env name="MYSQL_PORT" value="3306" />
         <env name="MYSQL_ENCODING" value="utf8mb4" />
         <env name="MYSQL_DATABASE" value="dbhandler" />

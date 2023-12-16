@@ -43,7 +43,7 @@ describe('addValue() Exceptions', function () {
     $this->arguments['keyInput']->addValue(123);
   })->throws(
     Exception::class,
-    'Invalid type for argument keyInput. Expected varchar.',
+    "Invalid type for argument 'keyInput'. Expected type: varchar.",
     500,
   );
 
@@ -51,7 +51,7 @@ describe('addValue() Exceptions', function () {
     $this->arguments['valueInput']->addValue('123456');
   })->throws(
     Exception::class,
-    'Invalid length for argument valueInput. Expected 5.',
+    "Invalid length for argument 'valueInput'. Expected: 5.",
     500,
   );
 
