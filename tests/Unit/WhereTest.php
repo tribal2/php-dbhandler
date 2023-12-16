@@ -4,6 +4,57 @@ use Tribal2\DbHandler\Queries\Where;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Queries\Common;
 
+describe('Methods', function () {
+
+  beforeEach(function() {
+    $mockedCommon = Mockery::mock(Common::class);
+    $mockedCommon->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR);
+    $mockedCommon->shouldReceive('quoteWrap')->andReturn('`column`');
+    $this->mockedCommon = $mockedCommon;
+  });
+
+  test('setKey() should change the column value at any time', function () {
+    $clause = Where::equals('column', 'value', $this->mockedCommon);
+
+    $reflection = new ReflectionClass($clause);
+    $property = $reflection->getProperty('key');
+    $property->setAccessible(TRUE);
+
+    expect($property->getValue($clause))->toEqual('column');
+
+    $clause->setKey('column2');
+    expect($property->getValue($clause))->toEqual('column2');
+  });
+
+  test('setValue() should change the value at any time', function () {
+    $clause = Where::equals('column', 'value', $this->mockedCommon);
+
+    $reflection = new ReflectionClass($clause);
+    $property = $reflection->getProperty('value');
+    $property->setAccessible(TRUE);
+
+    expect($property->getValue($clause))->toEqual('value');
+
+    $clause->setValue('value2');
+    expect($property->getValue($clause))->toEqual('value2');
+  });
+
+  test('setPdoType() should change the pdoType at any time', function () {
+    $clause = Where::equals('column', 'value', $this->mockedCommon);
+
+    $reflection = new ReflectionClass($clause);
+    $property = $reflection->getProperty('pdoType');
+    $property->setAccessible(TRUE);
+
+    expect($property->getValue($clause))->toEqual(PDO::PARAM_STR);
+
+    $clause->setPdoType(PDO::PARAM_INT);
+    expect($property->getValue($clause))->toEqual(PDO::PARAM_INT);
+  });
+
+});
+
+
 describe('Where::getSql()', function () {
 
   beforeEach(function() {
@@ -58,6 +109,56 @@ describe('Where::getSql()', function () {
     $clause = Where::isNotNull('column', $this->mockedCommon);
     expect($clause->getSql($this->bindBuilder))
       ->toEqual("`column` IS NOT <BINDED_PLACEHOLDER>");
+  });
+
+  test('like/notLike creates a correct WhereClause', function () {
+    $clause = Where::like('column', 'value', $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` LIKE <BINDED_PLACEHOLDER>");
+
+    $clause2 = Where::notLike('column', 'value', $this->mockedCommon);
+    expect($clause2->getSql($this->bindBuilder))
+      ->toEqual("`column` NOT LIKE <BINDED_PLACEHOLDER>");
+  });
+
+  test('comparison operators', function () {
+    $clause = Where::greaterThan('column', 10, $this->mockedCommon);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` > <BINDED_PLACEHOLDER>");
+
+    $clause2 = Where::greaterThanOrEquals('column', 10, $this->mockedCommon);
+    expect($clause2->getSql($this->bindBuilder))
+      ->toEqual("`column` >= <BINDED_PLACEHOLDER>");
+
+    $clause3 = Where::lessThan('column', 10, $this->mockedCommon);
+    expect($clause3->getSql($this->bindBuilder))
+      ->toEqual("`column` < <BINDED_PLACEHOLDER>");
+
+    $clause4 = Where::lessThanOrEquals('column', 10, $this->mockedCommon);
+    expect($clause4->getSql($this->bindBuilder))
+      ->toEqual("`column` <= <BINDED_PLACEHOLDER>");
+  });
+
+  test('private static method numericComparison()', function() {
+    $reflection = new ReflectionClass(Where::class);
+    $method = $reflection->getMethod('numericComparison');
+    $method->setAccessible(TRUE);
+
+    $clause = $method->invokeArgs(NULL, ['column', 10, '>', $this->mockedCommon]);
+    expect($clause->getSql($this->bindBuilder))
+      ->toEqual("`column` > <BINDED_PLACEHOLDER>");
+
+    $clause2 = $method->invokeArgs(NULL, ['column', 10, '>=', $this->mockedCommon]);
+    expect($clause2->getSql($this->bindBuilder))
+      ->toEqual("`column` >= <BINDED_PLACEHOLDER>");
+
+    $clause3 = $method->invokeArgs(NULL, ['column', 10, '<', $this->mockedCommon]);
+    expect($clause3->getSql($this->bindBuilder))
+      ->toEqual("`column` < <BINDED_PLACEHOLDER>");
+
+    $clause4 = $method->invokeArgs(NULL, ['column', 10, '<=', $this->mockedCommon]);
+    expect($clause4->getSql($this->bindBuilder))
+      ->toEqual("`column` <= <BINDED_PLACEHOLDER>");
   });
 
 });

@@ -317,6 +317,15 @@ class Where implements WhereInterface {
   }
 
 
+  // @todo 1 Add more methods:
+  //  - isTrue
+  //  - isFalse
+  //  - raw
+  //  - exists
+  //  - notExists
+  //  - subquery
+
+
   private static function numericComparison(
     string $key,
     int|float $value,

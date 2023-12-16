@@ -156,4 +156,52 @@ describe('SQL', function () {
     expect($updateSql)->toBe($expectedSql);
   });
 
+  it('should throw when no value is set', function () {
+    $this->update
+      ->getSql($this->mockBindBuilder);
+  })->throws(
+    Exception::class,
+    'No values provided for update',
+    400,
+  );
+
+});
+
+
+describe('Execution', function () {
+
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock()
+      ->shouldReceive('quoteWrap')->andReturn('<WRAPPED_VALUE>')->getMock()
+      ->shouldReceive('parseColumns')->andReturn('<COLUMNS>')->getMock();
+
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [ 'has' => TRUE ]);
+
+    $mockPdoWrapper = Mockery::mock(PDOWrapperInterface::class, [
+      'isReadOnly' => FALSE,
+      'execute' => Mockery::mock(PDOStatement::class, [
+        'rowCount' => 1,
+      ]),
+    ]);
+
+    $this->update = Update::_table(
+      'test_table',
+      $mockPdoWrapper,
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      $mockCommon,
+    );
+  });
+
+  test('update a single value', function () {
+    $updateResult = $this->update
+      ->set('key', 'value1')
+      ->execute();
+
+    expect($updateResult)
+      ->toBeInt()
+      ->toBe(1);
+  });
+
 });
