@@ -1,7 +1,6 @@
 <?php
 
 use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
-use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Queries\Schema;
 
 describe('Instance', function () {
@@ -27,7 +26,7 @@ describe('Exceptions', function () {
       $arg->addValue('invalid');
   })->throws(
     Exception::class,
-    'Invalid type for argument test. Expected int.',
+    "Invalid type for argument 'test'. Expected type: int.",
     500,
   );
 
@@ -36,7 +35,7 @@ describe('Exceptions', function () {
     $arg->addValue('invalid');
   })->throws(
     Exception::class,
-    'Invalid length for argument test. Expected 5.',
+    "Invalid length for argument 'test'. Expected: 5.",
     500,
   );
 
@@ -50,6 +49,8 @@ describe('StoredProcedureArgument', function () {
       $arg->addValue(123);
 
       expect($arg->value)->toEqual(123);
+
+      expect($arg->hasValue())->toBeTrue();
   });
 
 });
@@ -97,4 +98,16 @@ describe('Static methods', function () {
       ->toHaveProperty('type', 'varchar')
       ->toHaveProperty('maxCharLength', 255);
   });
+
+  it('should throw if there are no arguments', function () {
+    $mockSchema = Mockery::mock(Schema::class, [
+      'getStoredProcedureArguments' => [],
+    ]);
+
+    StoredProcedureArgument::getAllFor('procedure_name', $mockSchema);
+  })->throws(
+    Exception::class,
+    "No arguments found for stored procedure 'procedure_name'.",
+    500,
+  );
 });

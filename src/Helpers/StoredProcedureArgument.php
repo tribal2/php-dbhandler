@@ -38,64 +38,40 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
     $typeError = FALSE;
     $strLenError = FALSE;
 
-    switch ($this->type) {
-      case 'int':
-        $typeError = !is_int($value);
-        break;
-      case 'varchar':
-        $typeError = !is_string($value);
-        $strLenError = strlen($value) > $this->maxCharLength;
-        break;
-      case 'text':
-        $typeError = !is_string($value);
-        break;
-      case 'date':
-        $typeError = !is_string($value);
-        break;
-      case 'datetime':
-        $typeError = !is_string($value);
-        break;
-      case 'time':
-        $typeError = !is_string($value);
-        break;
-      case 'decimal':
-        $typeError = !is_float($value);
-        break;
-      case 'double':
-        $typeError = !is_float($value);
-        break;
-      case 'float':
-        $typeError = !is_float($value);
-        break;
-      case 'tinyint':
-        $typeError = !is_bool($value);
-        break;
-      case 'bit':
-        $typeError = !is_bool($value);
-        break;
-      case 'boolean':
-        $typeError = !is_bool($value);
-        break;
-      case 'json':
-        $typeError = !is_string($value);
-        break;
-      default:
-        throw new \Exception(
-          "Invalid type for argument {$this->name}.",
-          500,
-        );
+    $typeError = match($this->type) {
+      'int' => !is_int($value),
+      'varchar',
+      'text',
+      'date',
+      'datetime',
+      'time',
+      'json' => !is_string($value),
+      'decimal',
+      'double',
+      'float' => !is_float($value),
+      'tinyint',
+      'bit',
+      'boolean' => !is_bool($value),
+      default => throw new \Exception(
+        "Invalid type for argument {$this->name}.",
+        500,
+      ),
+    };
+
+    if ($this->type === 'varchar' && strlen($value) > $this->maxCharLength) {
+      $strLenError = TRUE;
     }
 
     if ($typeError) {
       throw new \Exception(
-        "Invalid type for argument {$this->name}. Expected {$this->type}.",
+        "Invalid type for argument '{$this->name}'. Expected type: {$this->type}.",
         500,
       );
     }
 
     if ($strLenError) {
       throw new \Exception(
-        "Invalid length for argument {$this->name}. Expected {$this->maxCharLength}.",
+        "Invalid length for argument '{$this->name}'. Expected: {$this->maxCharLength}.",
         500,
       );
     }
@@ -108,9 +84,10 @@ class StoredProcedureArgument implements StoredProcedureArgumentInterface {
   ): array {
     $dbArguments = $schema->getStoredProcedureArguments($procedureName);
 
+    // @todo 1 Does it make sense to throw an exception if there are no arguments?
     if (empty($dbArguments)) {
       throw new \Exception(
-        "No arguments found for stored procedure {$procedureName}.",
+        "No arguments found for stored procedure '{$procedureName}'.",
         500,
       );
     }
