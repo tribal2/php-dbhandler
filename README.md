@@ -1,6 +1,7 @@
 <h1 align="center">PHP-DbHandler</h1>
 
 <p align="center">
+  <a href="https://packagist.org/packages/tribal2/db-handler" title="Latest Version"><img alt="Latest Version" src="https://img.shields.io/packagist/v/tribal2/db-handler"></a>
   <a href="https://github.com/tribal2/php-dbhandler" title="CI GitHub action"><img alt="CI GitHub action status" src="https://github.com/tribal2/php-dbhandler/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://codecov.io/gh/tribal2/php-dbhandler" title="Code coverage"><img alt="Codecov Code Coverage" src="https://img.shields.io/codecov/c/github/tribal2/php-dbhandler?logo=codecov"></a>
   <a href="https://github.com/tribal2/php-dbhandler/blob/main/LICENSE" title="license"><img alt="LICENSE" src="https://img.shields.io/badge/license-MIT-428f7e.svg?logo=open%20source%20initiative&logoColor=white&labelColor=555555"></a>
