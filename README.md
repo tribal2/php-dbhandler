@@ -184,7 +184,7 @@ $select = $db->select()
   ->columns(['column1', 'column2'])
   ->column('column3')
   ->from('table_name')
-  ->where(Where::equals('column2', 1))  // See "Where Clauses" section below
+  ->where(Where::equals('column2', 1))  // See "Where Clauses" section above
   ->groupBy('column1')
   ->having(Where::equals('sum(column2)', 5))
   ->orderBy('column3', 'ASC')
@@ -479,9 +479,9 @@ Managing database transactions is a crucial aspect of ensuring data integrity, e
 With the provided transaction management capabilities, you can easily start, commit, or roll back transactions, giving you complete control over your database operations. This ensures that a series of database operations can be treated as a single atomic unit, either completing entirely or not at all, thus maintaining the consistency and reliability of your data.
 
 ```php
-$db->transaction()->begin();
-$db->transaction()->commit();
-$db->transaction()->rollback();
+$db->transaction->begin();
+$db->transaction->commit();
+$db->transaction->rollback();
 ```
 This feature is particularly useful in scenarios where multiple related database operations need to be executed together. If any operation within the transaction fails, the rollback method can be used to revert all changes made from the beginning of the transaction, thereby preventing partial updates that could lead to data inconsistencies. Conversely, if all operations are successful, the commit method will save all changes to the database.
 
@@ -497,21 +497,21 @@ You can manage multiple transactional operations as part of a larger transaction
 
 ```php
 // Begin a transaction
-$db->transaction()->begin();
+$db->transaction->begin();
 
 // Disable automatic commits
-$db->transaction()->setCommitsModeOff();
+$db->transaction->setCommitsModeOff();
 
 // Execute other methods that use transactions
-// $db->transaction()->begin();
+// $db->transaction->begin();
 // ...
-// $db->transaction()->commit();
+// $db->transaction->commit();
 
 // Re-enable automatic commits
-$db->transaction()->setCommitsModeOn();
+$db->transaction->setCommitsModeOn();
 
 // Commit the transaction
-$db->transaction()->commit();
+$db->transaction->commit();
 ```
 
 This feature enhances the control over transactional operations, allowing for more complex and reliable data manipulation scenarios. It ensures that all changes made within the scope of the global transaction are either committed together or rolled back, maintaining data integrity and consistency.

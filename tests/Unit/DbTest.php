@@ -19,7 +19,7 @@ describe('Db Class', function () {
   });
 
   it('should return a Transaction instance', function () {
-    expect($this->db->transaction())->toBeInstanceOf(Transaction::class);
+    expect($this->db->transaction)->toBeInstanceOf(Transaction::class);
   });
 
   it('should return a Schema instance', function () {

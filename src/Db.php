@@ -14,15 +14,14 @@ use Tribal2\DbHandler\Queries\Update;
 
 class Db {
 
+  public Transaction $transaction;
+
 
   public function __construct(
     private PDOWrapperInterface $pdo,
     private ?CacheInterface $cache = NULL,
-  ) {}
-
-
-  public function transaction(): Transaction {
-    return new Transaction($this->pdo);
+  ) {
+    $this->transaction = new Transaction($this->pdo);
   }
 
 
