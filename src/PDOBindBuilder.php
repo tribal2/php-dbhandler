@@ -145,31 +145,15 @@ class PDOBindBuilder implements PDOBindBuilderInterface {
     mixed $value,
     int $type = PDO::PARAM_STR,
   ): void {
-    $isInvalid = FALSE;
-
-    switch ($type) {
-      case PDO::PARAM_BOOL:
-        $isInvalid = !is_bool($value);
-        break;
-
-      case PDO::PARAM_NULL:
-        $isInvalid = !is_null($value);
-        break;
-
-      case PDO::PARAM_INT:
-        $isInvalid = !is_int($value);
-        break;
-
-      case PDO::PARAM_STR_CHAR:
-      case PDO::PARAM_STR_NATL:
-      case PDO::PARAM_STR:
-        $isInvalid = !(is_string($value) || is_numeric($value));
-        break;
-
-      default:
-        $isInvalid = TRUE;
-        break;
-    }
+    $isInvalid = match($type) {
+      PDO::PARAM_BOOL => !is_bool($value),
+      PDO::PARAM_NULL => !is_null($value),
+      PDO::PARAM_INT => !is_int($value),
+      PDO::PARAM_STR_CHAR,
+      PDO::PARAM_STR_NATL,
+      PDO::PARAM_STR => !(is_string($value) || is_numeric($value)),
+      default => TRUE,
+    };
 
     if ($isInvalid) {
       $humanPdoType = [

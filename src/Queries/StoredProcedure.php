@@ -39,7 +39,7 @@ class StoredProcedure extends QueryAbstract {
 
     if (empty($this->params)) {
       throw new Exception(
-        "No parameters have been set for stored procedure '{$this->name}'",
+        "No parameters have been set for stored procedure '{$this->name}'.",
         500
       );
     }
@@ -72,6 +72,7 @@ class StoredProcedure extends QueryAbstract {
     $this->name = $name;
 
     if (is_null($params)) {
+      // @todo 1 use a factory to get the schema
       $schema = new Schema($this->_pdo, $this->_common);
       $params = StoredProcedureArgument::getAllFor($name, $schema);
     }

@@ -2,6 +2,7 @@
 
 namespace Tribal2\DbHandler\Queries;
 
+use Exception;
 use PDO;
 use Tribal2\DbHandler\Enums\SqlValueTypeEnum;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
@@ -89,15 +90,13 @@ class Where implements WhereInterface {
       );
     }
 
-    switch ($this->operator) {
-      case 'IN':
-      case 'NOT IN':
-        return "{$column} {$this->operator} (" . implode(', ', $valuePlaceholders) . ')';
-
-      case 'BETWEEN':
-      case 'NOT BETWEEN':
-        return "{$column} {$this->operator} {$valuePlaceholders[0]} AND {$valuePlaceholders[1]}";
-    }
+    return match($this->operator) {
+      'IN',
+      'NOT IN' => "{$column} {$this->operator} (" . implode(', ', $valuePlaceholders) . ')',
+      'BETWEEN',
+      'NOT BETWEEN' => "{$column} {$this->operator} {$valuePlaceholders[0]} AND {$valuePlaceholders[1]}",
+      default => throw new Exception("Invalid operator: {$this->operator}"),
+    };
   }
 
 

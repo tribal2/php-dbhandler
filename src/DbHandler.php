@@ -156,7 +156,7 @@ class DbHandler {
   final public function transactionManager($action) {
     self::$logger->debug('');
 
-    switch($action) {
+    switch ($action) {
       case 'begin':
         if ($this->transaction->check()) {
           self::$logger->debug('>>> Ya hay una transacción iniciada.');

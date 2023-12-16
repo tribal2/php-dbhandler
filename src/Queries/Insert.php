@@ -176,6 +176,7 @@ class Insert extends QueryAbstract {
       $rowWhere = [];
       foreach ($this->dbColumns->key as $keyColName) {
         if (isset($row[$keyColName])) {
+          // @todo 1 Use the where factory to make the where
           $rowWhere[] = Where::equals(
             $keyColName,
             $row[$keyColName],
@@ -205,6 +206,7 @@ class Insert extends QueryAbstract {
       $this->_common,
     );
 
+    // @todo 1 Use the select factory to make the select
     $select = new Select($this->_pdo, $this->_common);
     $exists = $select
       ->from($this->table)

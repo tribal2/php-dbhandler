@@ -106,13 +106,13 @@ class Cache implements CacheInterface {
   }
 
 
+  /**
+   * @codeCoverageIgnore
+   */
   private function __clone() {}
 
 
   public function __construct() {}
-
-
-  public function __wakeup() {}
 
 
 }

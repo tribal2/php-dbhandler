@@ -4,7 +4,6 @@ namespace Tribal2\DbHandler\Queries;
 
 use Exception;
 use PDO;
-use stdClass;
 use Tribal2\DbHandler\Abstracts\QueryAbstract;
 use Tribal2\DbHandler\Core\FetchPaginatedResult;
 use Tribal2\DbHandler\Core\FetchResult;
