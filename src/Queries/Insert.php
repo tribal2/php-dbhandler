@@ -125,7 +125,7 @@ class Insert extends QueryAbstract {
 
 
   public function getSql(?PDOBindBuilderInterface $bindBuilder = NULL): string {
-    if (count($this->values) === 0) {
+    if (count($this->values) === 1 && count($this->values[0]) === 0) {
       throw new Exception(
         'You must provide at least one value to insert',
         400,
