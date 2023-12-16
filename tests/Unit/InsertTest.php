@@ -6,6 +6,7 @@ use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\WhereFactoryInterface;
+use Tribal2\DbHandler\Interfaces\WhereInterface;
 use Tribal2\DbHandler\Queries\Insert;
 
 
@@ -189,6 +190,72 @@ describe('SQL', function () {
 
     expect($sql)->toBeString();
     expect($sql)->toBe($expected);
+  });
+
+  test('getSql() throws when no value is set', function () {
+    $this->insert
+      ->getSql($this->mockBindBuilder);
+  })->throws(
+    Exception::class,
+    'You must provide at least one value to insert',
+  );
+
+});
+
+
+describe('Execution', function () {
+
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class);
+    $mockCommon
+      ->shouldReceive('quoteWrap')->with('test_table')->andReturn('`test_table`')->getMock()
+      ->shouldReceive('quoteWrap')->with('key')->andReturn('`key`')->getMock()
+      ->shouldReceive('quoteWrap')->with('value')->andReturn('`value`')->getMock()
+      ->shouldReceive('quoteWrap')->with('created_at')->andReturn('`created_at`')->getMock()
+      ->shouldReceive('checkValue')->andReturn(PDO::PARAM_STR)->getMock();
+
+    $mockColumns = Mockery::mock(ColumnsInterface::class, [
+      'has' => TRUE,
+    ]);
+    $mockColumns->autoincrement = [];
+    $mockColumns->key = ['key'];
+
+    $mockPdo = Mockery::mock(PDOWrapperInterface::class, [
+      'isReadOnly' => FALSE,
+      'execute' => Mockery::mock(PDOStatement::class, [
+        'fetchAll' => [],
+        'rowCount' => 1,
+      ]),
+    ]);
+
+    $mockWhere = Mockery::mock(WhereInterface::class, [
+      'getSql' => 'WHERE 1',
+      'getValues' => [],
+    ]);
+
+    $this->insert = Insert::_into(
+      'test_table',
+      $mockPdo,
+      Mockery::mock(ColumnsFactoryInterface::class, [ 'make' => $mockColumns ]),
+      Mockery::mock(WhereFactoryInterface::class, [ 'make' => $mockWhere ]),
+      $mockCommon,
+    );
+  });
+
+  test('execute() returns the number of inserted rows', function () {
+    $insertedRows = $this->insert
+      ->value('key', 25)
+      ->values([
+        'value' => 'asdfadsf',
+        'created_at' => '2020-01-01 00:00:00',
+      ])
+      ->execute();
+
+    var_dump($insertedRows);
+
+    expect($insertedRows)
+      ->toBeInt()
+      ->toEqual(1);
   });
 
 });

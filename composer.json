@@ -38,7 +38,7 @@
     },
     "scripts": {
         "test": "vendor/bin/pest --coverage --min=90 --coverage-html=coverage",
-        "test-ci": "vendor/bin/pest tests/Unit --coverage --coverage-clover ./coverage.xml"
+        "test-ci": "vendor/bin/pest tests/Unit --coverage --min=95 --coverage-clover ./coverage.xml"
     },
     "config": {
         "allow-plugins": {

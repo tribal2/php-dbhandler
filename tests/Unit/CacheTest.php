@@ -3,12 +3,22 @@
 use Tribal2\DbHandler\Helpers\Cache;
 
 
-describe('Cache', function () {
+describe('Instance', function () {
 
   it('can be instantiated', function () {
     $cache = new Cache();
     expect($cache)->toBeInstanceOf(Cache::class);
   });
+
+  it('should throw when cloned', function () {
+    $cache = new Cache();
+    $_ = clone $cache;
+  })->throws(Error::class);
+
+});
+
+
+describe('Methods', function () {
 
   test('Cache set and get works correctly', function () {
     $cache = new Cache();
@@ -47,6 +57,13 @@ describe('Cache', function () {
 
     expect($cache->has($key))->toBeTrue();
     expect($cache->has('nonExistingKey'))->toBeFalse();
+  });
+
+  test('Cache get should return default value', function() {
+    $cache = new Cache();
+    $value = $cache->get('nonExistingKey', 'defaultValue');
+
+    expect($value)->toBe('defaultValue');
   });
 
   test('Cache setMultiple and getMultiple work correctly', function () {

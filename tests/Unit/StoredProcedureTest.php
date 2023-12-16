@@ -1,5 +1,6 @@
 <?php
 
+use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
@@ -20,6 +21,31 @@ describe('Instance', function () {
 
 
 describe('Exceptions', function () {
+
+  it('should throw when stored procedure name is empty', function () {
+    $sp = new StoredProcedure(
+      Mockery::mock(PDOWrapperInterface::class, ['isReadOnly' => FALSE]),
+      Mockery::mock(CommonInterface::class),
+    );
+    $sp->execute();
+  })->throws(
+    Exception::class,
+    'No stored procedure name has been set. Use the call() method to set the name.',
+    500,
+  );
+
+  it('should throw when no param is set', function () {
+    $sp = new StoredProcedure(
+      Mockery::mock(PDOWrapperInterface::class, ['isReadOnly' => FALSE]),
+      Mockery::mock(CommonInterface::class),
+    );
+    $sp->name = 'get_test_rows';
+    $sp->execute();
+  })->throws(
+    Exception::class,
+    "No parameters have been set for stored procedure 'get_test_rows'.",
+    500,
+  );
 
   it('should throw when read-only mode is enabled', function () {
     StoredProcedure::_call(

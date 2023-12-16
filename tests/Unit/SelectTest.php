@@ -1,7 +1,7 @@
 <?php
 
-use Mockery\MockInterface;
 use Psr\SimpleCache\CacheInterface;
+use Tribal2\DbHandler\Enums\OrderByDirectionEnum;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\FetchPaginatedResultInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
@@ -91,6 +91,16 @@ describe('SQL', function () {
     expect($sql)->toBe(implode(' ', $expected));
   });
 
+  test('it should throw when setting having() before groupBy()', function () {
+    $this->select
+      ->column('column1')
+      ->column('sum(column2)')
+      ->having($this->mockWhere);
+  })->throws(
+    Exception::class,
+    'HAVING clause requires GROUP BY clause',
+  );
+
   test('with all options', function () {
     $sql = $this->select
       ->column('column1')
@@ -98,6 +108,7 @@ describe('SQL', function () {
       ->where($this->mockWhere)
       ->groupBy('column1')
       ->having($this->mockWhere)
+      ->orderBy('column1', OrderByDirectionEnum::DESC)
       ->limit(5)
       ->getSql($this->mockBindBuilder);
 
@@ -107,10 +118,73 @@ describe('SQL', function () {
       'WHERE <WHERE>',
       'GROUP BY <COLUMNS>',
       'HAVING <WHERE>',
+      'ORDER BY <WRAPPED_VALUE> DESC',
       'LIMIT <BINDED_VALUE>;',
     ];
     expect($sql)->toBe(implode(' ', $expected));
   });
+});
+
+
+
+describe('Fetching results', function () {
+
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+      'parseColumns' => '<COLUMNS>',
+    ]);
+
+    $this->queryResult = [
+      (object)['column1' => 'value1'],
+      (object)['column1' => 'value2'],
+    ];
+
+    $mockPDOStatement = Mockery::mock(PDOStatement::class, [
+      'fetchAll' => $this->queryResult,
+    ]);
+
+    $mockPDOWrapper = Mockery::mock(PDOWrapperInterface::class, [
+      'execute' => $mockPDOStatement,
+    ]);
+
+    $this->select = Select::_from(
+      'my_table',
+      $mockPDOWrapper,
+      $mockCommon,
+    );
+  });
+
+  test('fetchAll()', function () {
+    $results = $this->select
+      ->fetchAll();
+
+    expect($results->data)
+      ->toBeArray()
+      ->toHaveLength(2);
+  });
+
+  // @todo 1 Fix this test
+  // test('fetchLast()', function () {
+  //   $results = $this->select
+  //     ->fetchLast();
+
+  //   expect($results->data)
+  //     ->toBeArray()
+  //     ->toHaveLength(1);
+  // });
+
+  // @todo 1 Fix this test
+  // test('fetchDistincts()', function () {
+  //   $results = $this->select
+  //     ->fetchDistincts();
+
+  //   expect($results->data)
+  //     ->toBeArray()
+  //     ->toHaveLength(1);
+  // });
+
 });
 
 
@@ -309,4 +383,68 @@ describe('Pagination', function () {
   //   expect($result->page)->toBe($totalPages);
   //   expect($result->perPage)->toBe(3);
   // });
+});
+
+
+describe('Private methods', function () {
+
+  beforeEach(function () {
+    $mockCommon = Mockery::mock(CommonInterface::class, [
+      'checkValue' => PDO::PARAM_STR,
+      'quoteWrap' => '<WRAPPED_VALUE>',
+      'parseColumns' => '<COLUMNS>',
+    ]);
+
+    $this->select = Select::_from(
+      'my_table',
+      Mockery::mock(PDOWrapperInterface::class),
+      $mockCommon,
+    );
+
+    $this->mockBindBuilder = Mockery::mock(PDOBindBuilderInterface::class, [
+      'addValueWithPrefix' => '<BINDED_VALUE>',
+    ]);
+
+    $this->mockWhere = Mockery::mock(WhereInterface::class, ['getSql' => '<WHERE>']);
+  });
+
+  test('checkAndGetSingleColumn() throws when there are no columns', function () {
+    $reflection = new ReflectionClass($this->select);
+    $method = $reflection->getMethod('checkAndGetSingleColumn');
+    $method->setAccessible(TRUE);
+
+    $method->invokeArgs($this->select, []);
+  })->throws(
+    Exception::class,
+    'There are no columns to select. Provide a column name to this method or use ->column(<column>) before.',
+  );
+
+  test('checkAndGetSingleColumn() throws when there are more than one column', function () {
+    $this->select
+      ->column('col1')
+      ->column('col2');
+
+    $reflection = new ReflectionClass($this->select);
+    $method = $reflection->getMethod('checkAndGetSingleColumn');
+    $method->setAccessible(TRUE);
+
+    $method->invokeArgs($this->select, []);
+  })->throws(
+    Exception::class,
+    'There are more than one column to select. Provide a column name to this method.',
+  );
+
+  test('checkAndGetSingleColumn() returns the column that is set', function () {
+    $this->select
+      ->column('col1');
+
+    $reflection = new ReflectionClass($this->select);
+    $method = $reflection->getMethod('checkAndGetSingleColumn');
+    $method->setAccessible(TRUE);
+
+    $col = $method->invokeArgs($this->select, []);
+
+    expect($col)->toBe('col1');
+  });
+
 });

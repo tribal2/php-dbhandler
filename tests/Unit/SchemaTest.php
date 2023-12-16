@@ -22,7 +22,17 @@ describe('Methods', function () {
   beforeEach(function () {
     $this->myPdo = Mockery::mock(PDOWrapperInterface::class, [
       'getDbName' => 'test_db',
+      'execute' => Mockery::mock(PDOStatement::class, [
+        'fetchAll' => [],
+      ]),
     ]);
+  });
+
+  test("getDatabase() - should return the name of the database", function () {
+    $schema = new Schema($this->myPdo);
+
+    expect($schema->getDatabase())
+      ->toEqual('test_db');
   });
 
   test("checkIfTableExists('known_table') - should return TRUE", function () {
@@ -47,6 +57,14 @@ describe('Methods', function () {
     expect($schema->checkIfTableExists('unknown_table'))
       ->toBeBool()
       ->toBe(FALSE);
+  });
+
+  test("getStoredProcedureArguments()", function () {
+    $schema = new Schema($this->myPdo);
+
+    expect($schema->getStoredProcedureArguments('proc_name'))
+      ->toBeArray()
+      ->toBeEmpty();
   });
 
 });
