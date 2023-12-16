@@ -14,7 +14,17 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    env:
+      DB_DATABASE: dbhandler
+      DB_USER: root
+      DB_PASSWORD: root
+
     steps:
+      - name: Set up MySQL
+        run: |
+          sudo /etc/init.d/mysql start
+          mysql -e 'CREATE DATABASE ${{ env.DB_DATABASE }};' -u${{ env.DB_USER }} -p${{ env.DB_PASSWORD }}
+
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -25,7 +35,6 @@ jobs:
           extensions: PDO, pdo_mysql, mbstring
           coverage: xdebug
           tools: composer
-
 
       - name: Validate composer.json and composer.lock
         run: composer validate --strict
@@ -43,7 +52,9 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Pest/PHPUnit Tests
-        run: mv phpunit.xml{.sample,} && composer run-script test-ci
+        run: |
+          mv phpunit.xml{.ci,}
+          composer run-script test-ci
         env:
           XDEBUG_MODE: coverage
 

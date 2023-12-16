@@ -578,7 +578,6 @@ vendor/bin/pest --type-coverage
 ```
 
 > **Note**:
-> - The /tests/Feature tests will require you to copy the `./phpunit.xml.sample` to `./phpunit.xml` and update the DB connection details.
 > - The `--coverage` and `--type-coverage` flags are optional and will generate a coverage report.
 
 ### Submitting Contributions

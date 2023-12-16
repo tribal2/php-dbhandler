@@ -30,7 +30,7 @@ describe('DbConfig', function () {
       password: 'password'
     );
 
-    $expectedConnString = 'mysql:host=localhost; port=3306; dbname=test_db; charset=utf8mb4;';
+    $expectedConnString = 'mysql:host=localhost;port=3306;dbname=test_db;charset=utf8mb4;';
     expect($config->getConnString())->toEqual($expectedConnString);
   });
 
@@ -45,7 +45,7 @@ describe('DbConfig', function () {
     $config->withPort(1234);
     $config->withCharset('utf8');
 
-    $expectedConnString = 'mysql:host=mariadb; port=1234; dbname=test_db; charset=utf8;';
+    $expectedConnString = 'mysql:host=mariadb;port=1234;dbname=test_db;charset=utf8;';
     expect($config->getConnString())->toEqual($expectedConnString);
   });
 
