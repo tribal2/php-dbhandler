@@ -1,8 +1,10 @@
 <?php
 
+use Mockery\MockInterface;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\Queries\StoredProcedure;
 
@@ -77,6 +79,61 @@ describe('Exceptions', function () {
 
 
 describe('with() and getArguments()', function () {
+
+  // @todo 1 fix this test
+  // it('should call setSchema with no arguments', function () {
+  //   $sp = new StoredProcedure(
+  //     Mockery::mock(PDOWrapperInterface::class, [
+  //       'getDbName' => 'test',
+  //       'execute' => Mockery::mock(PDOStatement::class, [
+  //         'fetchAll' => [
+  //           (object)[
+  //             'ORDINAL_POSITION' => 1,
+  //             'PARAMETER_NAME' => 'param1',
+  //             'DATA_TYPE' => 'int',
+  //             'CHARACTER_MAXIMUM_LENGTH' => NULL
+  //           ],
+  //         ],
+  //       ]),
+  //     ]),
+  //     Mockery::mock(CommonInterface::class),
+  //   );
+
+  //   /**
+  //    * @var MockInterface&StoredProcedure $sp
+  //    */
+  //   $sp = Mockery::mock($sp)->makePartial();
+  //   $sp->call('get_test_rows');
+
+  //   $sp->shouldHaveReceived('setSchema')->once();
+  // });
+
+  it('should query for its own parameters if not set', function () {
+    $sp = new StoredProcedure(
+      Mockery::mock(PDOWrapperInterface::class),
+      Mockery::mock(CommonInterface::class),
+    );
+
+    $mockSchema = Mockery::mock(SchemaInterface::class, [
+      'getStoredProcedureArguments' => [
+        (object)[
+          'ORDINAL_POSITION' => 1,
+          'PARAMETER_NAME' => 'param1',
+          'DATA_TYPE' => 'int',
+          'CHARACTER_MAXIMUM_LENGTH' => NULL
+        ],
+      ],
+    ]);
+
+    $sp->setSchema($mockSchema);
+
+    $sp->call('get_test_rows')->with('param1', 123);
+
+    expect($sp->getArguments())
+      ->toBeArray()
+      ->toHaveCount(1)
+      ->toHaveKey('param1');
+  });
 
   it('should accept values for expected argument', function () {
     $mockArg = Mockery::mock(

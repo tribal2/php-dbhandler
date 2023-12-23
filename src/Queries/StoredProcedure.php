@@ -9,6 +9,7 @@ use Tribal2\DbHandler\Helpers\StoredProcedureArgument;
 use Tribal2\DbHandler\Interfaces\CommonInterface;
 use Tribal2\DbHandler\Interfaces\PDOBindBuilderInterface;
 use Tribal2\DbHandler\Interfaces\PDOWrapperInterface;
+use Tribal2\DbHandler\Interfaces\SchemaInterface;
 use Tribal2\DbHandler\Interfaces\StoredProcedureArgumentInterface;
 use Tribal2\DbHandler\PDOBindBuilder;
 use Tribal2\DbHandler\Traits\QueryBeforeExecuteCheckIfReadOnlyTrait;
@@ -17,6 +18,9 @@ use Tribal2\DbHandler\Traits\QueryFetchResultsTrait;
 class StoredProcedure extends QueryAbstract {
   use QueryBeforeExecuteCheckIfReadOnlyTrait;
   use QueryFetchResultsTrait;
+
+  // Dependen
+  protected SchemaInterface $_schema;
 
   // Properties
   public string $name;
@@ -27,22 +31,16 @@ class StoredProcedure extends QueryAbstract {
   private array $params;
 
 
+  public function setSchema(?SchemaInterface $schema = NULL): void {
+    $this->_schema = $schema ?? new Schema($this->_pdo, $this->_common);
+  }
+
+
   protected function beforeExecute(): void {
     $this->checkIfReadOnly();
 
-    if (empty($this->name)) {
-      throw new Exception(
-        'No stored procedure name has been set. Use the call() method to set the name.',
-        500
-      );
-    }
-
-    if (empty($this->params)) {
-      throw new Exception(
-        "No parameters have been set for stored procedure '{$this->name}'.",
-        500
-      );
-    }
+    $this->checkName();
+    $this->checkParams();
   }
 
 
@@ -71,19 +69,15 @@ class StoredProcedure extends QueryAbstract {
   ): self {
     $this->name = $name;
 
-    if (is_null($params)) {
-      // @todo 1 use a factory to get the schema
-      $schema = new Schema($this->_pdo, $this->_common);
-      $params = StoredProcedureArgument::getAllFor($name, $schema);
-    }
-
-    $this->params = $params;
+    $this->params = $params ?? $this->getParams();
 
     return $this;
   }
 
 
   public function with(string $paramName, mixed $value): self {
+    $this->checkName();
+
     // Throw if there is no parameter with the given name in $this->params
     if (!array_key_exists($paramName, $this->params)) {
       throw new Exception(
@@ -127,6 +121,35 @@ class StoredProcedure extends QueryAbstract {
     $procParams = implode(', ', $params);
 
     return "CALL {$this->name}({$procParams});";
+  }
+
+
+  private function getParams(): array {
+    if (!isset($this->_schema)) {
+      $this->setSchema();
+    }
+
+    return StoredProcedureArgument::getAllFor($this->name, $this->_schema);
+  }
+
+
+  private function checkName(): void {
+    if (empty($this->name)) {
+      throw new Exception(
+        'No stored procedure name has been set. Use the call() method to set the name.',
+        500
+      );
+    }
+  }
+
+
+  private function checkParams(): void {
+    if (empty($this->params)) {
+      throw new Exception(
+        "No parameters have been set for stored procedure '{$this->name}'.",
+        500
+      );
+    }
   }
 
 
