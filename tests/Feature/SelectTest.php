@@ -67,8 +67,7 @@ describe('fetchFirst()', function () {
 
   test('return last', function () {
     $result = Select::_from('test_table', $this->myPdo)
-      ->orderBy('test_table_id', OrderByDirectionEnum::DESC)
-      ->fetchFirst();
+      ->fetchLast();
 
       expect($result->value)->toBe('Test value 2');
   });
